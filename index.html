@@ -302,7 +302,7 @@
       <label id="labelNumber">Numéro du département
         <input id="inputNumber" type="text" inputmode="text" autocomplete="off">
       </label>
-      <label id="labelSecond">Chef-lieu
+      <label id="labelSecond"><span id="labelSecondText">Chef-lieu</span>
         <input id="inputSecond" type="text" autocomplete="off">
       </label>
     </div>
@@ -508,7 +508,7 @@ function onDotClick(e){
 function startQuiz(){
   const isDept = mode === "dept";
   document.getElementById("labelNumber").classList.toggle("hidden", !isDept);
-  document.getElementById("labelSecond").textContent = isDept ? "Chef-lieu" : "Capitale";
+  document.getElementById("labelSecondText").textContent = isDept ? "Chef-lieu" : "Capitale";
   document.getElementById("inputNumber").value = "";
 
   if(isDept){
