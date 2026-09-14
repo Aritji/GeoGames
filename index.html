@@ -160,6 +160,9 @@
   .dot.correct{fill:var(--sage);fill-opacity:1;stroke:none;}
   .dot.wrong{fill:var(--rust);fill-opacity:1;stroke:none;}
   .grat{stroke:var(--paper);stroke-opacity:0.07;stroke-width:1;}
+  .region-fill{fill:var(--gold);fill-opacity:0.10;}
+  .region-borders{stroke:var(--ink);stroke-opacity:0.5;stroke-width:1;fill:none;}
+  .national-border{stroke:var(--gold);stroke-opacity:0.8;stroke-width:1.6;fill:none;}
 
   .answer-fields{
     display:flex;
@@ -454,10 +457,88 @@ function normNum(s){
 const DEPT_BOUNDS = {lonMin:-4.6,lonMax:9.9,latMin:41.6,latMax:51.0};
 const WORLD_BOUNDS = {lonMin:-110,lonMax:180,latMin:-46,latMax:70};
 
+// rough silhouette of mainland France and Corsica (lon,lat), used to shape the map background
+const FRANCE_OUTLINE = [
+  [2.55,51.0],[3.15,50.78],[4.8,50.38],[6.15,49.45],[7.75,48.95],[7.6,47.65],
+  [7.0,46.9],[6.85,46.0],[7.0,45.3],[7.5,44.1],[7.55,43.75],[6.9,43.15],
+  [5.35,43.18],[4.6,43.38],[3.15,43.1],[2.9,42.45],[1.45,42.6],[0.35,42.75],
+  [-1.35,43.35],[-1.25,44.65],[-1.15,45.6],[-1.95,46.3],[-2.45,47.28],
+  [-4.35,47.85],[-4.75,48.38],[-4.55,48.7],[-3.0,48.75],[-1.6,49.7],
+  [-0.35,49.7],[1.35,50.05],[1.6,50.9]
+];
+const CORSICA_OUTLINE = [
+  [9.35,43.0],[9.55,42.65],[9.4,41.95],[9.1,41.55],[8.75,41.9],[8.6,42.6],[8.75,42.95],[9.0,43.0]
+];
+
+function pointInPoly(x, y, poly){
+  let inside = false;
+  for(let i=0, j=poly.length-1; i<poly.length; j=i++){
+    const xi=poly[i][0], yi=poly[i][1], xj=poly[j][0], yj=poly[j][1];
+    const intersect = ((yi>y)!==(yj>y)) && (x < (xj-xi)*(y-yi)/(yj-yi)+xi);
+    if(intersect) inside = !inside;
+  }
+  return inside;
+}
+
 function project(p, bounds, w, h, pad){
   const x = pad + (p.lon-bounds.lonMin)/(bounds.lonMax-bounds.lonMin) * (w-2*pad);
   const y = pad + (bounds.latMax-p.lat)/(bounds.latMax-bounds.latMin) * (h-2*pad);
   return [x,y];
+}
+
+// build a filled silhouette with internal borders between the closest-point regions
+// (a lightweight nearest-neighbour "mosaic" — no external map data needed)
+function buildRegionBackground(svg, points, mainlandIdx, corsicaIdx, bounds, w, h){
+  const pad = 20;
+  const mainlandPoly = FRANCE_OUTLINE.map(([lon,lat])=>project({lat,lon}, bounds, w, h, pad));
+  const corsicaPoly = CORSICA_OUTLINE.map(([lon,lat])=>project({lat,lon}, bounds, w, h, pad));
+
+  const fillD = "M" + mainlandPoly.map(p=>p.join(",")).join("L") + "Z " +
+                "M" + corsicaPoly.map(p=>p.join(",")).join("L") + "Z";
+  svg.insertAdjacentHTML("beforeend", `<path class="region-fill" d="${fillD}"/>`);
+  svg.insertAdjacentHTML("beforeend", `<path class="national-border" d="${fillD}"/>`);
+
+  const cols = 80, rows = Math.round(cols * h / w);
+  const cellW = w / cols, cellH = h / rows;
+
+  function nearestOwner(x, y, idxList){
+    let best = -1, bestD = Infinity;
+    for(const i of idxList){
+      const dx = points[i][0]-x, dy = points[i][1]-y;
+      const d = dx*dx + dy*dy;
+      if(d < bestD){ bestD = d; best = i; }
+    }
+    return best;
+  }
+
+  const owner = [];
+  for(let gy=0; gy<rows; gy++){
+    owner.push(new Array(cols).fill(-1));
+    for(let gx=0; gx<cols; gx++){
+      const cx = (gx+0.5)*cellW, cy = (gy+0.5)*cellH;
+      if(pointInPoly(cx, cy, mainlandPoly)) owner[gy][gx] = nearestOwner(cx, cy, mainlandIdx);
+      else if(pointInPoly(cx, cy, corsicaPoly)) owner[gy][gx] = nearestOwner(cx, cy, corsicaIdx);
+    }
+  }
+
+  let borderD = "";
+  for(let gy=0; gy<rows; gy++){
+    for(let gx=0; gx<cols; gx++){
+      const o = owner[gy][gx];
+      if(o === -1) continue;
+      const right = gx+1<cols ? owner[gy][gx+1] : -1;
+      const down = gy+1<rows ? owner[gy+1][gx] : -1;
+      if(right !== o){
+        const x = (gx+1)*cellW;
+        borderD += `M${x},${gy*cellH}L${x},${(gy+1)*cellH} `;
+      }
+      if(down !== o){
+        const y = (gy+1)*cellH;
+        borderD += `M${gx*cellW},${y}L${(gx+1)*cellW},${y} `;
+      }
+    }
+  }
+  svg.insertAdjacentHTML("beforeend", `<path class="region-borders" d="${borderD}"/>`);
 }
 
 // ---------- RENDER MAP ----------
@@ -470,17 +551,24 @@ function renderMap(){
   svg.setAttribute("viewBox", "0 0 " + w + " " + h);
   svg.innerHTML = "";
 
-  // graticule for a cartographic feel
-  const step = isDept ? 1 : 10;
-  for(let lon=Math.ceil(bounds.lonMin/step)*step; lon<=bounds.lonMax; lon+=step){
-    const [x1,y1] = project({lat:bounds.latMin,lon}, bounds, w, h, 20);
-    const [x2,y2] = project({lat:bounds.latMax,lon}, bounds, w, h, 20);
-    svg.insertAdjacentHTML("beforeend", `<line class="grat" x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}"/>`);
-  }
-  for(let lat=Math.ceil(bounds.latMin/step)*step; lat<=bounds.latMax; lat+=step){
-    const [x1,y1] = project({lat,lon:bounds.lonMin}, bounds, w, h, 20);
-    const [x2,y2] = project({lat,lon:bounds.lonMax}, bounds, w, h, 20);
-    svg.insertAdjacentHTML("beforeend", `<line class="grat" x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}"/>`);
+  if(isDept){
+    const points = activeSet.map(item => project(item, bounds, w, h, 20));
+    const mainlandIdx = [], corsicaIdx = [];
+    activeSet.forEach((d,i)=>{ (d.code==="2A"||d.code==="2B" ? corsicaIdx : mainlandIdx).push(i); });
+    buildRegionBackground(svg, points, mainlandIdx, corsicaIdx, bounds, w, h);
+  } else {
+    // graticule for a cartographic feel (world map only)
+    const step = 10;
+    for(let lon=Math.ceil(bounds.lonMin/step)*step; lon<=bounds.lonMax; lon+=step){
+      const [x1,y1] = project({lat:bounds.latMin,lon}, bounds, w, h, 20);
+      const [x2,y2] = project({lat:bounds.latMax,lon}, bounds, w, h, 20);
+      svg.insertAdjacentHTML("beforeend", `<line class="grat" x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}"/>`);
+    }
+    for(let lat=Math.ceil(bounds.latMin/step)*step; lat<=bounds.latMax; lat+=step){
+      const [x1,y1] = project({lat,lon:bounds.lonMin}, bounds, w, h, 20);
+      const [x2,y2] = project({lat,lon:bounds.lonMax}, bounds, w, h, 20);
+      svg.insertAdjacentHTML("beforeend", `<line class="grat" x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}"/>`);
+    }
   }
 
   activeSet.forEach((item, idx)=>{
@@ -488,7 +576,7 @@ function renderMap(){
     const c = document.createElementNS("http://www.w3.org/2000/svg","circle");
     c.setAttribute("cx", x);
     c.setAttribute("cy", y);
-    c.setAttribute("r", isDept ? 5.5 : 4.5);
+    c.setAttribute("r", isDept ? 4.5 : 4.5);
     c.setAttribute("class","dot");
     c.dataset.idx = idx;
     c.addEventListener("click", onDotClick);
