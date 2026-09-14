@@ -1,0 +1,657 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Atlas — quiz de géographie</title>
+<!--
+  EMPLACEMENT POUR LE SCRIPT GOOGLE ADSENSE
+  Une fois ton compte AdSense validé, colle ici le script fourni par Google,
+  du type :
+  <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-XXXXXXXXXXXXXXXX" crossorigin="anonymous"></script>
+  Puis, dans chaque bloc "EMPLACEMENT PUBLICITAIRE" plus bas dans le body,
+  remplace le contenu du <div class="ad-slot"> par le bloc <ins class="adsbygoogle">
+  que Google te donnera pour cet emplacement, suivi de :
+  <script>(adsbygoogle = window.adsbygoogle || []).push({});</script>
+-->
+<style>
+  :root{
+    --ink:#141b2d;
+    --ink-soft:#2a3552;
+    --paper:#efe8d6;
+    --paper-dim:#c9c2ab;
+    --gold:#caa155;
+    --gold-deep:#a9813c;
+    --sage:#6f9a6e;
+    --rust:#b6543c;
+    --serif: "Iowan Old Style", "Palatino Linotype", Georgia, serif;
+    --sans: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:var(--ink);
+    color:var(--paper);
+    font-family:var(--sans);
+    min-height:100vh;
+  }
+  #app{
+    max-width:760px;
+    margin:0 auto;
+    padding:32px 20px 64px;
+  }
+  header{
+    display:flex;
+    flex-wrap:wrap;
+    align-items:baseline;
+    justify-content:space-between;
+    gap:16px;
+    border-bottom:1px solid var(--ink-soft);
+    padding-bottom:18px;
+    margin-bottom:28px;
+  }
+  h1{
+    font-family:var(--serif);
+    font-weight:400;
+    font-size:2.1rem;
+    letter-spacing:0.02em;
+    margin:0;
+    color:var(--paper);
+  }
+  h1 span{color:var(--gold);}
+  nav{display:flex;gap:22px;}
+  .mode-btn{
+    background:none;
+    border:none;
+    border-bottom:2px solid transparent;
+    color:var(--paper-dim);
+    font-family:var(--sans);
+    font-size:0.95rem;
+    padding:4px 0;
+    cursor:pointer;
+  }
+  .mode-btn.active{color:var(--gold);border-bottom-color:var(--gold);}
+  .mode-btn:hover{color:var(--paper);}
+
+  .panel{
+    background:var(--paper);
+    color:var(--ink);
+    border-radius:3px;
+    padding:26px 26px 22px;
+    margin-bottom:22px;
+  }
+  .hidden{display:none !important;}
+
+  .field-row{
+    display:flex;
+    flex-wrap:wrap;
+    gap:28px;
+    margin-bottom:22px;
+  }
+  .field{
+    display:flex;
+    flex-direction:column;
+    gap:6px;
+  }
+  .field legend, .field .flabel{
+    font-size:0.82rem;
+    color:var(--ink-soft);
+  }
+  select{
+    font-family:var(--sans);
+    font-size:0.95rem;
+    border:none;
+    border-bottom:1px solid var(--ink-soft);
+    background:transparent;
+    color:var(--ink);
+    padding:4px 2px;
+  }
+  .radio-group{display:flex;gap:16px;}
+  .radio-group label{display:flex;align-items:center;gap:6px;font-size:0.92rem;cursor:pointer;}
+
+  .btn{
+    font-family:var(--sans);
+    font-size:0.95rem;
+    background:var(--ink);
+    color:var(--gold);
+    border:none;
+    padding:10px 22px;
+    border-radius:2px;
+    cursor:pointer;
+  }
+  .btn:hover{background:var(--ink-soft);}
+  .btn.secondary{
+    background:transparent;
+    color:var(--ink);
+    border:1px solid var(--ink-soft);
+  }
+  .btn.secondary:hover{background:rgba(0,0,0,0.05);}
+  .btn:disabled{opacity:0.4;cursor:not-allowed;}
+
+  .quiz-top{
+    display:flex;
+    justify-content:space-between;
+    font-size:0.85rem;
+    color:var(--ink-soft);
+    margin-bottom:6px;
+  }
+  .prompt{
+    font-family:var(--serif);
+    font-size:1.35rem;
+    margin:4px 0 16px;
+  }
+  .prompt strong{color:var(--gold-deep);font-weight:600;}
+
+  .map-wrap{
+    background:var(--ink);
+    border-radius:2px;
+    padding:8px;
+    margin-bottom:18px;
+  }
+  svg{display:block;width:100%;height:auto;}
+  .dot{
+    fill:var(--gold);
+    fill-opacity:0.55;
+    stroke:none;
+    cursor:pointer;
+  }
+  .dot:hover{fill-opacity:0.9;}
+  .dot.selected{fill:var(--paper);fill-opacity:1;stroke:var(--gold);stroke-width:2;}
+  .dot.correct{fill:var(--sage);fill-opacity:1;stroke:none;}
+  .dot.wrong{fill:var(--rust);fill-opacity:1;stroke:none;}
+  .grat{stroke:var(--paper);stroke-opacity:0.07;stroke-width:1;}
+
+  .answer-fields{
+    display:flex;
+    flex-wrap:wrap;
+    gap:24px;
+    margin-bottom:18px;
+  }
+  .answer-fields label{
+    display:flex;
+    flex-direction:column;
+    gap:4px;
+    font-size:0.82rem;
+    color:var(--ink-soft);
+    flex:1;
+    min-width:140px;
+  }
+  .answer-fields input{
+    font-family:var(--sans);
+    font-size:1rem;
+    border:none;
+    border-bottom:1px solid var(--ink-soft);
+    background:transparent;
+    color:var(--ink);
+    padding:6px 2px;
+  }
+  .answer-fields input:focus{outline:none;border-bottom-color:var(--gold-deep);}
+  .answer-fields input.ok{border-bottom-color:var(--sage);}
+  .answer-fields input.bad{border-bottom-color:var(--rust);}
+
+  .actions{display:flex;gap:12px;margin-bottom:14px;}
+  #feedback{
+    font-size:0.92rem;
+    line-height:1.5;
+    min-height:1.4em;
+  }
+  #feedback .ok-line{color:#3f6b3f;}
+  #feedback .bad-line{color:#8a3a26;}
+
+  #result p{font-family:var(--serif);font-size:1.4rem;margin-top:0;}
+
+  details{
+    background:var(--paper);
+    color:var(--ink);
+    border-radius:3px;
+    padding:14px 26px;
+  }
+  summary{cursor:pointer;font-size:0.92rem;color:var(--ink-soft);}
+  table{width:100%;border-collapse:collapse;margin-top:14px;font-size:0.88rem;}
+  th,td{text-align:left;padding:5px 8px;border-bottom:1px solid rgba(0,0,0,0.08);}
+  th{color:var(--ink-soft);font-weight:600;}
+
+  .ad-slot{
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    min-height:90px;
+    border:1px dashed var(--paper-dim);
+    border-radius:2px;
+    color:var(--paper-dim);
+    font-size:0.78rem;
+    letter-spacing:0.02em;
+    margin-bottom:22px;
+    padding:10px;
+    text-align:center;
+  }
+
+  @media (max-width:520px){
+    h1{font-size:1.7rem;}
+    .panel{padding:20px 18px 18px;}
+    .field-row{gap:18px;}
+  }
+</style>
+</head>
+<body>
+<div id="app">
+
+  <header>
+    <h1>Atlas<span>.</span></h1>
+    <nav id="modeNav">
+      <button class="mode-btn active" data-mode="dept">Départements</button>
+      <button class="mode-btn" data-mode="country">Pays &amp; capitales</button>
+    </nav>
+  </header>
+
+  <div class="ad-slot" id="adTop">
+    <!-- EMPLACEMENT PUBLICITAIRE (haut de page) — remplace ce commentaire par ton bloc <ins class="adsbygoogle">... -->
+    Emplacement publicitaire
+  </div>
+
+  <div id="setupDept" class="panel">
+    <p style="margin-top:0;font-family:var(--serif);font-size:1.1rem;">Quiz des départements français</p>
+    <p style="font-size:0.9rem;color:var(--ink-soft);margin-top:-8px;">Pour chaque département, place-le sur la carte, puis écris son numéro et son chef-lieu.</p>
+    <div class="field-row">
+      <div class="field">
+        <span class="flabel">Nombre de questions</span>
+        <select id="deptCount">
+          <option value="10">10</option>
+          <option value="20" selected>20</option>
+          <option value="40">40</option>
+          <option value="96">Les 96 départements</option>
+        </select>
+      </div>
+    </div>
+    <button class="btn" id="startDept">Commencer</button>
+  </div>
+
+  <div id="setupCountry" class="panel hidden">
+    <p style="margin-top:0;font-family:var(--serif);font-size:1.1rem;">Quiz des pays et capitales</p>
+    <p style="font-size:0.9rem;color:var(--ink-soft);margin-top:-8px;">Pour chaque pays, place-le sur la carte, puis écris le nom de sa capitale.</p>
+    <div class="field-row">
+      <div class="field">
+        <span class="flabel">Zone</span>
+        <div class="radio-group">
+          <label><input type="radio" name="zone" value="Europe" checked> Europe</label>
+          <label><input type="radio" name="zone" value="all"> Monde entier</label>
+        </div>
+      </div>
+      <div class="field">
+        <span class="flabel">Nombre de questions</span>
+        <select id="countryCount">
+          <option value="10">10</option>
+          <option value="20" selected>20</option>
+          <option value="all">Toutes</option>
+        </select>
+      </div>
+    </div>
+    <button class="btn" id="startCountry">Commencer</button>
+  </div>
+
+  <div id="quiz" class="panel hidden">
+    <div class="quiz-top">
+      <span>Question <span id="qIndex"></span> / <span id="qTotal"></span></span>
+      <span>Score : <span id="scoreVal">0</span></span>
+    </div>
+    <p class="prompt">Où se situe <strong id="targetName"></strong> ?</p>
+    <div class="map-wrap">
+      <svg id="mapSvg"></svg>
+    </div>
+    <div class="answer-fields" id="answerFields">
+      <label id="labelNumber">Numéro du département
+        <input id="inputNumber" type="text" inputmode="text" autocomplete="off">
+      </label>
+      <label id="labelSecond">Chef-lieu
+        <input id="inputSecond" type="text" autocomplete="off">
+      </label>
+    </div>
+    <div class="actions">
+      <button class="btn" id="submitBtn">Valider</button>
+      <button class="btn secondary hidden" id="nextBtn">Question suivante</button>
+    </div>
+    <div id="feedback"></div>
+  </div>
+
+  <div id="result" class="panel hidden">
+    <p id="finalScoreText"></p>
+    <button class="btn" id="restartBtn">Recommencer</button>
+  </div>
+
+  <div class="ad-slot" id="adBottom">
+    <!-- EMPLACEMENT PUBLICITAIRE (bas de page) — remplace ce commentaire par ton bloc <ins class="adsbygoogle">... -->
+    Emplacement publicitaire
+  </div>
+
+  <details id="revision">
+    <summary>Table de révision (à consulter avant de te lancer)</summary>
+    <table id="revTable"><thead><tr id="revHead"></tr></thead><tbody id="revBody"></tbody></table>
+  </details>
+
+</div>
+
+<script>
+// ---------- DATA ----------
+const DEPARTMENTS = [
+["01","Ain","Bourg-en-Bresse",46.20,5.23],["02","Aisne","Laon",49.56,3.62],
+["03","Allier","Moulins",46.57,3.33],["04","Alpes-de-Haute-Provence","Digne-les-Bains",44.09,6.24],
+["05","Hautes-Alpes","Gap",44.56,6.08],["06","Alpes-Maritimes","Nice",43.70,7.27],
+["07","Ardèche","Privas",44.74,4.60],["08","Ardennes","Charleville-Mézières",49.77,4.72],
+["09","Ariège","Foix",42.97,1.61],["10","Aube","Troyes",48.30,4.08],
+["11","Aude","Carcassonne",43.21,2.35],["12","Aveyron","Rodez",44.35,2.57],
+["13","Bouches-du-Rhône","Marseille",43.30,5.37],["14","Calvados","Caen",49.18,-0.37],
+["15","Cantal","Aurillac",44.93,2.44],["16","Charente","Angoulême",45.65,0.16],
+["17","Charente-Maritime","La Rochelle",46.16,-1.15],["18","Cher","Bourges",47.08,2.40],
+["19","Corrèze","Tulle",45.27,1.77],["2A","Corse-du-Sud","Ajaccio",41.92,8.74],
+["2B","Haute-Corse","Bastia",42.70,9.45],["21","Côte-d'Or","Dijon",47.32,5.04],
+["22","Côtes-d'Armor","Saint-Brieuc",48.51,-2.77],["23","Creuse","Guéret",46.17,1.87],
+["24","Dordogne","Périgueux",45.18,0.72],["25","Doubs","Besançon",47.24,6.02],
+["26","Drôme","Valence",44.93,4.89],["27","Eure","Évreux",49.03,1.15],
+["28","Eure-et-Loir","Chartres",48.45,1.49],["29","Finistère","Quimper",47.99,-4.10],
+["30","Gard","Nîmes",43.84,4.36],["31","Haute-Garonne","Toulouse",43.60,1.44],
+["32","Gers","Auch",43.65,0.59],["33","Gironde","Bordeaux",44.84,-0.58],
+["34","Hérault","Montpellier",43.61,3.88],["35","Ille-et-Vilaine","Rennes",48.11,-1.68],
+["36","Indre","Châteauroux",46.81,1.69],["37","Indre-et-Loire","Tours",47.39,0.69],
+["38","Isère","Grenoble",45.19,5.72],["39","Jura","Lons-le-Saunier",46.68,5.55],
+["40","Landes","Mont-de-Marsan",43.89,-0.50],["41","Loir-et-Cher","Blois",47.59,1.33],
+["42","Loire","Saint-Étienne",45.44,4.39],["43","Haute-Loire","Le Puy-en-Velay",45.04,3.88],
+["44","Loire-Atlantique","Nantes",47.22,-1.55],["45","Loiret","Orléans",47.90,1.90],
+["46","Lot","Cahors",44.45,1.44],["47","Lot-et-Garonne","Agen",44.20,0.62],
+["48","Lozère","Mende",44.52,3.50],["49","Maine-et-Loire","Angers",47.47,-0.55],
+["50","Manche","Saint-Lô",49.11,-1.09],["51","Marne","Châlons-en-Champagne",48.96,4.36],
+["52","Haute-Marne","Chaumont",48.11,5.14],["53","Mayenne","Laval",48.07,-0.77],
+["54","Meurthe-et-Moselle","Nancy",48.69,6.18],["55","Meuse","Bar-le-Duc",48.77,5.16],
+["56","Morbihan","Vannes",47.66,-2.76],["57","Moselle","Metz",49.12,6.18],
+["58","Nièvre","Nevers",46.99,3.16],["59","Nord","Lille",50.63,3.06],
+["60","Oise","Beauvais",49.43,2.08],["61","Orne","Alençon",48.43,0.09],
+["62","Pas-de-Calais","Arras",50.29,2.78],["63","Puy-de-Dôme","Clermont-Ferrand",45.78,3.08],
+["64","Pyrénées-Atlantiques","Pau",43.30,-0.37],["65","Hautes-Pyrénées","Tarbes",43.23,0.08],
+["66","Pyrénées-Orientales","Perpignan",42.70,2.90],["67","Bas-Rhin","Strasbourg",48.58,7.75],
+["68","Haut-Rhin","Colmar",48.08,7.36],["69","Rhône","Lyon",45.76,4.83],
+["70","Haute-Saône","Vesoul",47.62,6.15],["71","Saône-et-Loire","Mâcon",46.31,4.83],
+["72","Sarthe","Le Mans",48.00,0.20],["73","Savoie","Chambéry",45.56,5.92],
+["74","Haute-Savoie","Annecy",45.90,6.13],["75","Paris","Paris",48.86,2.35],
+["76","Seine-Maritime","Rouen",49.44,1.10],["77","Seine-et-Marne","Melun",48.54,2.66],
+["78","Yvelines","Versailles",48.80,2.13],["79","Deux-Sèvres","Niort",46.32,-0.46],
+["80","Somme","Amiens",49.90,2.30],["81","Tarn","Albi",43.93,2.15],
+["82","Tarn-et-Garonne","Montauban",44.02,1.35],["83","Var","Toulon",43.12,5.93],
+["84","Vaucluse","Avignon",43.95,4.81],["85","Vendée","La Roche-sur-Yon",46.67,-1.43],
+["86","Vienne","Poitiers",46.58,0.34],["87","Haute-Vienne","Limoges",45.83,1.26],
+["88","Vosges","Épinal",48.17,6.45],["89","Yonne","Auxerre",47.80,3.57],
+["90","Territoire de Belfort","Belfort",47.64,6.86],["91","Essonne","Évry",48.63,2.43],
+["92","Hauts-de-Seine","Nanterre",48.89,2.20],["93","Seine-Saint-Denis","Bobigny",48.91,2.44],
+["94","Val-de-Marne","Créteil",48.79,2.47],["95","Val-d'Oise","Cergy",49.04,2.08]
+].map(d=>({code:d[0],nom:d[1],chefLieu:d[2],lat:d[3],lon:d[4]}));
+
+const COUNTRIES = [
+["France","Paris",48.86,2.35,"Europe"],["Allemagne","Berlin",52.52,13.40,"Europe"],
+["Espagne","Madrid",40.42,-3.70,"Europe"],["Italie","Rome",41.90,12.50,"Europe"],
+["Portugal","Lisbonne",38.72,-9.14,"Europe"],["Royaume-Uni","Londres",51.51,-0.13,"Europe"],
+["Irlande","Dublin",53.35,-6.26,"Europe"],["Belgique","Bruxelles",50.85,4.35,"Europe"],
+["Pays-Bas","Amsterdam",52.37,4.90,"Europe"],["Luxembourg","Luxembourg",49.61,6.13,"Europe"],
+["Suisse","Berne",46.95,7.45,"Europe"],["Autriche","Vienne",48.21,16.37,"Europe"],
+["Danemark","Copenhague",55.68,12.57,"Europe"],["Suède","Stockholm",59.33,18.06,"Europe"],
+["Norvège","Oslo",59.91,10.75,"Europe"],["Finlande","Helsinki",60.17,24.94,"Europe"],
+["Islande","Reykjavik",64.15,-21.94,"Europe"],["Pologne","Varsovie",52.23,21.01,"Europe"],
+["République tchèque","Prague",50.09,14.42,"Europe"],["Slovaquie","Bratislava",48.15,17.11,"Europe"],
+["Hongrie","Budapest",47.50,19.04,"Europe"],["Roumanie","Bucarest",44.43,26.10,"Europe"],
+["Bulgarie","Sofia",42.70,23.32,"Europe"],["Grèce","Athènes",37.98,23.73,"Europe"],
+["Croatie","Zagreb",45.81,15.98,"Europe"],["Slovénie","Ljubljana",46.06,14.51,"Europe"],
+["Serbie","Belgrade",44.79,20.45,"Europe"],["Bosnie-Herzégovine","Sarajevo",43.86,18.41,"Europe"],
+["Monténégro","Podgorica",42.44,19.26,"Europe"],["Macédoine du Nord","Skopje",42.00,21.43,"Europe"],
+["Albanie","Tirana",41.33,19.82,"Europe"],["Estonie","Tallinn",59.44,24.75,"Europe"],
+["Lettonie","Riga",56.95,24.11,"Europe"],["Lituanie","Vilnius",54.69,25.28,"Europe"],
+["Ukraine","Kiev",50.45,30.52,"Europe"],["Biélorussie","Minsk",53.90,27.57,"Europe"],
+["Moldavie","Chisinau",47.01,28.86,"Europe"],["Russie","Moscou",55.75,37.62,"Europe"],
+["Malte","La Valette",35.90,14.51,"Europe"],["Chypre","Nicosie",35.17,33.36,"Europe"],
+["Monaco","Monaco",43.73,7.42,"Europe"],["Andorre","Andorre-la-Vieille",42.51,1.52,"Europe"],
+["Saint-Marin","Saint-Marin",43.94,12.45,"Europe"],["Liechtenstein","Vaduz",47.14,9.52,"Europe"],
+["États-Unis","Washington",38.90,-77.04,"Monde"],["Canada","Ottawa",45.42,-75.70,"Monde"],
+["Mexique","Mexico",19.43,-99.13,"Monde"],["Brésil","Brasília",-15.79,-47.88,"Monde"],
+["Argentine","Buenos Aires",-34.60,-58.38,"Monde"],["Chili","Santiago",-33.45,-70.67,"Monde"],
+["Pérou","Lima",-12.05,-77.04,"Monde"],["Colombie","Bogota",4.71,-74.07,"Monde"],
+["Chine","Pékin",39.90,116.40,"Monde"],["Japon","Tokyo",35.68,139.69,"Monde"],
+["Corée du Sud","Séoul",37.57,126.98,"Monde"],["Inde","New Delhi",28.61,77.21,"Monde"],
+["Indonésie","Jakarta",-6.21,106.85,"Monde"],["Australie","Canberra",-35.28,149.13,"Monde"],
+["Nouvelle-Zélande","Wellington",-41.29,174.78,"Monde"],["Égypte","Le Caire",30.04,31.24,"Monde"],
+["Afrique du Sud","Pretoria",-25.75,28.19,"Monde"],["Nigeria","Abuja",9.08,7.53,"Monde"],
+["Kenya","Nairobi",-1.29,36.82,"Monde"],["Maroc","Rabat",34.02,-6.83,"Monde"],
+["Algérie","Alger",36.75,3.06,"Monde"],["Tunisie","Tunis",36.81,10.18,"Monde"],
+["Turquie","Ankara",39.93,32.86,"Monde"],["Arabie saoudite","Riyad",24.71,46.68,"Monde"],
+["Israël","Jérusalem",31.77,35.21,"Monde"],["Émirats arabes unis","Abou Dabi",24.47,54.37,"Monde"],
+["Iran","Téhéran",35.69,51.39,"Monde"],["Pakistan","Islamabad",33.68,73.05,"Monde"],
+["Thaïlande","Bangkok",13.75,100.50,"Monde"],["Vietnam","Hanoï",21.03,105.85,"Monde"]
+].map(c=>({nom:c[0],capitale:c[1],lat:c[2],lon:c[3],region:c[4]}));
+
+// ---------- STATE ----------
+let mode = "dept";
+let activeSet = [];   // full dataset in play (dept list or filtered countries)
+let order = [];       // shuffled indices for the session
+let qPos = 0;
+let score = 0;
+let selectedIdx = null;
+let answered = false;
+
+// ---------- HELPERS ----------
+function shuffle(arr){
+  const a = arr.slice();
+  for(let i=a.length-1;i>0;i--){
+    const j = Math.floor(Math.random()*(i+1));
+    [a[i],a[j]]=[a[j],a[i]];
+  }
+  return a;
+}
+function normText(s){
+  return (s||"").normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase().trim().replace(/[\s'-]+/g," ");
+}
+function normNum(s){
+  s = (s||"").trim().toUpperCase();
+  if(/^\d+$/.test(s)) return String(parseInt(s,10));
+  return s;
+}
+
+// fixed projection bounds so the map shape stays consistent across questions
+const DEPT_BOUNDS = {lonMin:-4.6,lonMax:9.9,latMin:41.6,latMax:51.0};
+const WORLD_BOUNDS = {lonMin:-110,lonMax:180,latMin:-46,latMax:70};
+
+function project(p, bounds, w, h, pad){
+  const x = pad + (p.lon-bounds.lonMin)/(bounds.lonMax-bounds.lonMin) * (w-2*pad);
+  const y = pad + (bounds.latMax-p.lat)/(bounds.latMax-bounds.latMin) * (h-2*pad);
+  return [x,y];
+}
+
+// ---------- RENDER MAP ----------
+function renderMap(){
+  const svg = document.getElementById("mapSvg");
+  const isDept = mode === "dept";
+  const w = isDept ? 620 : 900;
+  const h = isDept ? 430 : 380;
+  const bounds = isDept ? DEPT_BOUNDS : WORLD_BOUNDS;
+  svg.setAttribute("viewBox", "0 0 " + w + " " + h);
+  svg.innerHTML = "";
+
+  // graticule for a cartographic feel
+  const step = isDept ? 1 : 10;
+  for(let lon=Math.ceil(bounds.lonMin/step)*step; lon<=bounds.lonMax; lon+=step){
+    const [x1,y1] = project({lat:bounds.latMin,lon}, bounds, w, h, 20);
+    const [x2,y2] = project({lat:bounds.latMax,lon}, bounds, w, h, 20);
+    svg.insertAdjacentHTML("beforeend", `<line class="grat" x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}"/>`);
+  }
+  for(let lat=Math.ceil(bounds.latMin/step)*step; lat<=bounds.latMax; lat+=step){
+    const [x1,y1] = project({lat,lon:bounds.lonMin}, bounds, w, h, 20);
+    const [x2,y2] = project({lat,lon:bounds.lonMax}, bounds, w, h, 20);
+    svg.insertAdjacentHTML("beforeend", `<line class="grat" x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}"/>`);
+  }
+
+  activeSet.forEach((item, idx)=>{
+    const [x,y] = project(item, bounds, w, h, 20);
+    const c = document.createElementNS("http://www.w3.org/2000/svg","circle");
+    c.setAttribute("cx", x);
+    c.setAttribute("cy", y);
+    c.setAttribute("r", isDept ? 5.5 : 4.5);
+    c.setAttribute("class","dot");
+    c.dataset.idx = idx;
+    c.addEventListener("click", onDotClick);
+    svg.appendChild(c);
+  });
+}
+
+function onDotClick(e){
+  if(answered) return;
+  const idx = parseInt(e.currentTarget.dataset.idx,10);
+  selectedIdx = idx;
+  document.querySelectorAll("#mapSvg .dot").forEach(d=>d.classList.remove("selected"));
+  e.currentTarget.classList.add("selected");
+}
+
+// ---------- QUIZ FLOW ----------
+function startQuiz(){
+  const isDept = mode === "dept";
+  document.getElementById("labelNumber").classList.toggle("hidden", !isDept);
+  document.getElementById("labelSecond").textContent = isDept ? "Chef-lieu" : "Capitale";
+  document.getElementById("inputNumber").value = "";
+
+  if(isDept){
+    activeSet = DEPARTMENTS;
+    const n = document.getElementById("deptCount").value;
+    const count = n === "96" ? activeSet.length : parseInt(n,10);
+    order = shuffle(activeSet.map((_,i)=>i)).slice(0,count);
+  } else {
+    const zone = document.querySelector('input[name="zone"]:checked').value;
+    activeSet = zone === "Europe" ? COUNTRIES.filter(c=>c.region==="Europe") : COUNTRIES;
+    const n = document.getElementById("countryCount").value;
+    const count = n === "all" ? activeSet.length : Math.min(parseInt(n,10), activeSet.length);
+    order = shuffle(activeSet.map((_,i)=>i)).slice(0,count);
+  }
+
+  qPos = 0;
+  score = 0;
+  document.getElementById("setupDept").classList.add("hidden");
+  document.getElementById("setupCountry").classList.add("hidden");
+  document.getElementById("result").classList.add("hidden");
+  document.getElementById("quiz").classList.remove("hidden");
+  showQuestion();
+}
+
+function currentTarget(){
+  return activeSet[order[qPos]];
+}
+
+function showQuestion(){
+  answered = false;
+  selectedIdx = null;
+  document.getElementById("qIndex").textContent = qPos+1;
+  document.getElementById("qTotal").textContent = order.length;
+  document.getElementById("scoreVal").textContent = score;
+  document.getElementById("targetName").textContent = currentTarget().nom;
+  document.getElementById("inputNumber").value = "";
+  document.getElementById("inputSecond").value = "";
+  document.getElementById("inputNumber").classList.remove("ok","bad");
+  document.getElementById("inputSecond").classList.remove("ok","bad");
+  document.getElementById("feedback").innerHTML = "";
+  document.getElementById("submitBtn").classList.remove("hidden");
+  document.getElementById("submitBtn").disabled = false;
+  document.getElementById("nextBtn").classList.add("hidden");
+  renderMap();
+}
+
+function submitAnswer(){
+  if(answered) return;
+  const target = currentTarget();
+  const isDept = mode === "dept";
+  const targetGlobalIdx = order[qPos];
+
+  const locationOk = selectedIdx === targetGlobalIdx;
+  let numberOk = true;
+  if(isDept){
+    numberOk = normNum(document.getElementById("inputNumber").value) === normNum(target.code);
+  }
+  const secondExpected = isDept ? target.chefLieu : target.capitale;
+  const secondOk = normText(document.getElementById("inputSecond").value) === normText(secondExpected);
+
+  const allOk = locationOk && numberOk && secondOk;
+  if(allOk) score++;
+
+  // visual feedback on map
+  document.querySelectorAll("#mapSvg .dot").forEach(d=>{
+    const idx = parseInt(d.dataset.idx,10);
+    if(idx === targetGlobalIdx) d.classList.add("correct");
+    else if(idx === selectedIdx && !locationOk) d.classList.add("wrong");
+  });
+
+  if(isDept){
+    document.getElementById("inputNumber").classList.add(numberOk ? "ok":"bad");
+  }
+  document.getElementById("inputSecond").classList.add(secondOk ? "ok":"bad");
+
+  const parts = [];
+  parts.push(`<div class="${locationOk?'ok-line':'bad-line'}">${locationOk ? "Bonne position sur la carte." : "Mauvaise position — regarde le point vert."}</div>`);
+  if(isDept){
+    parts.push(`<div class="${numberOk?'ok-line':'bad-line'}">${numberOk ? "Bon numéro." : "Le bon numéro était " + target.code + "."}</div>`);
+  }
+  parts.push(`<div class="${secondOk?'ok-line':'bad-line'}">${secondOk ? "Bonne réponse." : (isDept ? "Le chef-lieu était " : "La capitale était ") + secondExpected + "."}</div>`);
+  document.getElementById("feedback").innerHTML = parts.join("");
+
+  document.getElementById("scoreVal").textContent = score;
+  answered = true;
+  document.getElementById("submitBtn").classList.add("hidden");
+  document.getElementById("nextBtn").classList.remove("hidden");
+}
+
+function nextQuestion(){
+  qPos++;
+  if(qPos >= order.length){
+    endQuiz();
+  } else {
+    showQuestion();
+  }
+}
+
+function endQuiz(){
+  document.getElementById("quiz").classList.add("hidden");
+  document.getElementById("result").classList.remove("hidden");
+  document.getElementById("finalScoreText").textContent = "Score final : " + score + " / " + order.length;
+}
+
+// ---------- REVISION TABLE ----------
+function renderRevisionTable(){
+  const head = document.getElementById("revHead");
+  const body = document.getElementById("revBody");
+  if(mode === "dept"){
+    head.innerHTML = "<th>N°</th><th>Département</th><th>Chef-lieu</th>";
+    const sorted = DEPARTMENTS.slice().sort((a,b)=>a.nom.localeCompare(b.nom,"fr"));
+    body.innerHTML = sorted.map(d=>`<tr><td>${d.code}</td><td>${d.nom}</td><td>${d.chefLieu}</td></tr>`).join("");
+  } else {
+    head.innerHTML = "<th>Pays</th><th>Capitale</th><th>Zone</th>";
+    const sorted = COUNTRIES.slice().sort((a,b)=>a.nom.localeCompare(b.nom,"fr"));
+    body.innerHTML = sorted.map(c=>`<tr><td>${c.nom}</td><td>${c.capitale}</td><td>${c.region}</td></tr>`).join("");
+  }
+}
+
+// ---------- NAV / SETUP ----------
+function setMode(newMode){
+  mode = newMode;
+  document.querySelectorAll(".mode-btn").forEach(b=>b.classList.toggle("active", b.dataset.mode===mode));
+  document.getElementById("setupDept").classList.toggle("hidden", mode!=="dept");
+  document.getElementById("setupCountry").classList.toggle("hidden", mode!=="country");
+  document.getElementById("quiz").classList.add("hidden");
+  document.getElementById("result").classList.add("hidden");
+  renderRevisionTable();
+}
+
+document.querySelectorAll(".mode-btn").forEach(b=>{
+  b.addEventListener("click", ()=>setMode(b.dataset.mode));
+});
+document.getElementById("startDept").addEventListener("click", startQuiz);
+document.getElementById("startCountry").addEventListener("click", startQuiz);
+document.getElementById("submitBtn").addEventListener("click", submitAnswer);
+document.getElementById("nextBtn").addEventListener("click", nextQuestion);
+document.getElementById("restartBtn").addEventListener("click", ()=>{
+  document.getElementById("result").classList.add("hidden");
+  document.getElementById(mode==="dept" ? "setupDept" : "setupCountry").classList.remove("hidden");
+});
+
+renderRevisionTable();
+</script>
+</body>
+</html>
