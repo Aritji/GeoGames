@@ -163,6 +163,11 @@
   .region-fill{fill:var(--gold);fill-opacity:0.10;}
   .region-borders{stroke:var(--ink);stroke-opacity:0.5;stroke-width:1;fill:none;}
   .national-border{stroke:var(--gold);stroke-opacity:0.8;stroke-width:1.6;fill:none;}
+  .dept-path{fill:var(--gold);fill-opacity:0.14;stroke:var(--ink);stroke-opacity:0.55;stroke-width:1;cursor:pointer;transition:fill-opacity 0.15s;}
+  .dept-path:hover{fill-opacity:0.32;}
+  .dept-path.selected{fill-opacity:0.55;stroke:var(--paper);stroke-width:1.4;}
+  .dept-path.correct{fill:var(--sage);fill-opacity:0.6;}
+  .dept-path.wrong{fill:var(--rust);fill-opacity:0.55;}
 
   .answer-fields{
     display:flex;
@@ -541,17 +546,87 @@ function buildRegionBackground(svg, points, mainlandIdx, corsicaIdx, bounds, w, 
   svg.insertAdjacentHTML("beforeend", `<path class="region-borders" d="${borderD}"/>`);
 }
 
+// ---------- REAL DEPARTMENT BORDERS (loaded once, with graceful fallback) ----------
+let DEPT_GEO = null;        // code -> GeoJSON geometry
+let DEPT_GEO_BOUNDS = null; // real lon/lat extent of the loaded shapes
+let deptGeoReady = false;
+
+async function loadDeptGeo(){
+  try{
+    const res = await fetch("https://raw.githubusercontent.com/gregoiredavid/france-geojson/master/departements.geojson");
+    if(!res.ok) throw new Error("HTTP " + res.status);
+    const data = await res.json();
+    const geo = {};
+    let lonMin=Infinity, lonMax=-Infinity, latMin=Infinity, latMax=-Infinity;
+    data.features.forEach(f=>{
+      const code = f.properties.code;
+      geo[code] = f.geometry;
+      const polys = f.geometry.type==="Polygon" ? [f.geometry.coordinates] : f.geometry.coordinates;
+      polys.forEach(rings=>rings.forEach(ring=>ring.forEach(([lon,lat])=>{
+        if(lon<lonMin) lonMin=lon; if(lon>lonMax) lonMax=lon;
+        if(lat<latMin) latMin=lat; if(lat>latMax) latMax=lat;
+      })));
+    });
+    DEPT_GEO = geo;
+    DEPT_GEO_BOUNDS = {lonMin, lonMax, latMin, latMax};
+    deptGeoReady = true;
+    // if the person is already looking at a department map, upgrade it immediately
+    if(mode === "dept" && !document.getElementById("quiz").classList.contains("hidden")) renderMap();
+  } catch(e){
+    console.warn("Contours détaillés indisponibles, utilisation de la carte simplifiée.", e);
+    deptGeoReady = false;
+  }
+}
+loadDeptGeo();
+
+function geometryToPathD(geometry, bounds, w, h, pad){
+  const polys = geometry.type==="Polygon" ? [geometry.coordinates] : geometry.coordinates;
+  let d = "";
+  polys.forEach(rings=>{
+    rings.forEach(ring=>{
+      const pts = ring.map(([lon,lat])=>project({lat,lon}, bounds, w, h, pad));
+      d += "M" + pts.map(p=>p.join(",")).join("L") + "Z ";
+    });
+  });
+  return d;
+}
+
+function computeBoundsPadded(b, padRatio){
+  const lonPad = (b.lonMax-b.lonMin) * padRatio;
+  const latPad = (b.latMax-b.latMin) * padRatio;
+  return {lonMin:b.lonMin-lonPad, lonMax:b.lonMax+lonPad, latMin:b.latMin-latPad, latMax:b.latMax+latPad};
+}
+
+function computeBounds(items, padRatio){
+  const lats = items.map(p=>p.lat), lons = items.map(p=>p.lon);
+  const latMin=Math.min(...lats), latMax=Math.max(...lats);
+  const lonMin=Math.min(...lons), lonMax=Math.max(...lons);
+  const latPad = (latMax-latMin) * padRatio || 2;
+  const lonPad = (lonMax-lonMin) * padRatio || 2;
+  return {lonMin:lonMin-lonPad, lonMax:lonMax+lonPad, latMin:latMin-latPad, latMax:latMax+latPad};
+}
+
 // ---------- RENDER MAP ----------
 function renderMap(){
   const svg = document.getElementById("mapSvg");
   const isDept = mode === "dept";
   const w = isDept ? 620 : 900;
-  const h = isDept ? 430 : 380;
-  const bounds = isDept ? DEPT_BOUNDS : WORLD_BOUNDS;
+  const useRealGeo = isDept && deptGeoReady;
+  const bounds = useRealGeo ? computeBoundsPadded(DEPT_GEO_BOUNDS, 0.025) : (isDept ? DEPT_BOUNDS : computeBounds(activeSet, 0.10));
+  let h = isDept ? 430 : Math.round(w * (bounds.latMax-bounds.latMin) / (bounds.lonMax-bounds.lonMin));
+  if(!isDept) h = Math.max(300, Math.min(560, h));
   svg.setAttribute("viewBox", "0 0 " + w + " " + h);
   svg.innerHTML = "";
 
-  if(isDept){
+  if(isDept && useRealGeo){
+    activeSet.forEach((item, idx)=>{
+      const geom = DEPT_GEO[item.code];
+      if(!geom) return;
+      const d = geometryToPathD(geom, bounds, w, h, 20);
+      svg.insertAdjacentHTML("beforeend", `<path class="dept-path" data-idx="${idx}" d="${d}"/>`);
+    });
+    svg.querySelectorAll(".dept-path").forEach(p=>p.addEventListener("click", onDotClick));
+  } else if(isDept){
     const points = activeSet.map(item => project(item, bounds, w, h, 20));
     const mainlandIdx = [], corsicaIdx = [];
     activeSet.forEach((d,i)=>{ (d.code==="2A"||d.code==="2B" ? corsicaIdx : mainlandIdx).push(i); });
@@ -571,24 +646,26 @@ function renderMap(){
     }
   }
 
-  activeSet.forEach((item, idx)=>{
-    const [x,y] = project(item, bounds, w, h, 20);
-    const c = document.createElementNS("http://www.w3.org/2000/svg","circle");
-    c.setAttribute("cx", x);
-    c.setAttribute("cy", y);
-    c.setAttribute("r", isDept ? 4.5 : 4.5);
-    c.setAttribute("class","dot");
-    c.dataset.idx = idx;
-    c.addEventListener("click", onDotClick);
-    svg.appendChild(c);
-  });
+  if(!useRealGeo){
+    activeSet.forEach((item, idx)=>{
+      const [x,y] = project(item, bounds, w, h, 20);
+      const c = document.createElementNS("http://www.w3.org/2000/svg","circle");
+      c.setAttribute("cx", x);
+      c.setAttribute("cy", y);
+      c.setAttribute("r", 4.5);
+      c.setAttribute("class","dot");
+      c.dataset.idx = idx;
+      c.addEventListener("click", onDotClick);
+      svg.appendChild(c);
+    });
+  }
 }
 
 function onDotClick(e){
   if(answered) return;
   const idx = parseInt(e.currentTarget.dataset.idx,10);
   selectedIdx = idx;
-  document.querySelectorAll("#mapSvg .dot").forEach(d=>d.classList.remove("selected"));
+  document.querySelectorAll("#mapSvg .dot, #mapSvg .dept-path").forEach(d=>d.classList.remove("selected"));
   e.currentTarget.classList.add("selected");
 }
 
@@ -661,7 +738,7 @@ function submitAnswer(){
   if(allOk) score++;
 
   // visual feedback on map
-  document.querySelectorAll("#mapSvg .dot").forEach(d=>{
+  document.querySelectorAll("#mapSvg .dot, #mapSvg .dept-path").forEach(d=>{
     const idx = parseInt(d.dataset.idx,10);
     if(idx === targetGlobalIdx) d.classList.add("correct");
     else if(idx === selectedIdx && !locationOk) d.classList.add("wrong");
