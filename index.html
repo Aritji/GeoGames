@@ -36,7 +36,7 @@
     min-height:100vh;
   }
   #app{
-    max-width:1040px;
+    max-width:1280px;
     margin:0 auto;
     padding:32px 24px 64px;
   }
@@ -148,7 +148,7 @@
     padding:8px;
     margin-bottom:18px;
   }
-  svg{display:block;width:100%;height:auto;}
+  svg{display:block;width:100%;height:auto;overflow:hidden;}
   .dot{
     fill:var(--gold);
     fill-opacity:0.55;
@@ -391,7 +391,7 @@ const DEPARTMENTS = [
 ["94","Val-de-Marne","Créteil",48.79,2.47],["95","Val-d'Oise","Cergy",49.04,2.08]
 ].map(d=>({code:d[0],nom:d[1],chefLieu:d[2],lat:d[3],lon:d[4]}));
 
-const COUNTRIES = [
+let COUNTRIES = [
 ["France","Paris",48.86,2.35,"Europe","FRA"],["Allemagne","Berlin",52.52,13.40,"Europe","DEU"],
 ["Espagne","Madrid",40.42,-3.70,"Europe","ESP"],["Italie","Rome",41.90,12.50,"Europe","ITA"],
 ["Portugal","Lisbonne",38.72,-9.14,"Europe","PRT"],["Royaume-Uni","Londres",51.51,-0.13,"Europe","GBR"],
@@ -629,6 +629,42 @@ async function loadCountryGeo(){
 }
 loadCountryGeo();
 
+// French spellings for capitals that differ from their English source name
+const CAPITAL_FR_OVERRIDES = {
+  AUT:"Vienne", POL:"Varsovie", RUS:"Moscou", DNK:"Copenhague", ROU:"Bucarest",
+  GRC:"Athènes", PRT:"Lisbonne", BEL:"Bruxelles", GBR:"Londres", CHE:"Berne",
+  UKR:"Kiev", MLT:"La Valette", CYP:"Nicosie", EGY:"Le Caire", DZA:"Alger",
+  SAU:"Riyad", ARE:"Abou Dabi", IRN:"Téhéran", SYR:"Damas", LBN:"Beyrouth",
+  KWT:"Koweït", OMN:"Mascate", AFG:"Kaboul", BGD:"Dacca", LKA:"Colombo",
+  NPL:"Katmandou", MNG:"Oulan-Bator", VNM:"Hanoï", PHL:"Manille", KOR:"Séoul",
+  CHN:"Pékin", TUR:"Ankara", ISR:"Jérusalem", UZB:"Tachkent", GEO:"Tbilissi",
+  ARM:"Erevan", AZE:"Bakou", IRQ:"Bagdad", ETH:"Addis-Abeba", MEX:"Mexico",
+  USA:"Washington", CUB:"La Havane", GTM:"Guatemala", PAN:"Panama", DOM:"Saint-Domingue"
+};
+
+// ---------- FULL WORLD COUNTRY LIST (loaded once, keeps the 131-country list as fallback) ----------
+async function loadFullCountryList(){
+  try{
+    const res = await fetch("https://raw.githubusercontent.com/mledoze/countries/master/dist/countries.json");
+    if(!res.ok) throw new Error("HTTP " + res.status);
+    const data = await res.json();
+    const list = data
+      .filter(c => c.independent && c.capital && c.capital.length>0 && c.region!=="Antarctic" && c.latlng && c.latlng.length===2)
+      .map(c => ({
+        nom: (c.translations && c.translations.fra && c.translations.fra.common) || c.name.common,
+        capitale: CAPITAL_FR_OVERRIDES[c.cca3] || c.capital[0],
+        lat: c.latlng[0],
+        lon: c.latlng[1],
+        region: c.region === "Europe" ? "Europe" : "Monde",
+        iso3: c.cca3
+      }));
+    if(list.length > 100) COUNTRIES = list; // sanity check before trusting the fetched data
+  } catch(e){
+    console.warn("Liste complète des pays indisponible, utilisation de la liste réduite.", e);
+  }
+}
+loadFullCountryList();
+
 function computeGeomBounds(geoms, padRatio){
   let lonMin=Infinity, lonMax=-Infinity, latMin=Infinity, latMax=-Infinity;
   geoms.forEach(geometry=>{
@@ -678,16 +714,14 @@ function renderMap(){
   const useRealCountryGeo = !isDept && countryGeoReady;
 
   let bounds;
-  let countryGeoms = [];
   if(useRealDeptGeo){
     bounds = computeBoundsPadded(DEPT_GEO_BOUNDS, 0.025);
-  } else if(useRealCountryGeo){
-    countryGeoms = activeSet.map(item => COUNTRY_GEO[item.iso3]).filter(Boolean);
-    bounds = countryGeoms.length ? computeGeomBounds(countryGeoms, 0.08) : computeBounds(activeSet, 0.10);
   } else if(isDept){
     bounds = DEPT_BOUNDS;
   } else {
-    bounds = computeBounds(activeSet, 0.10);
+    // frame on the capitals in play, not on full country shapes — a transcontinental
+    // country like Russia would otherwise blow out the zoom/centering
+    bounds = computeBounds(activeSet, 0.12);
   }
 
   let h = isDept ? 430 : Math.round(w * (bounds.latMax-bounds.latMin) / (bounds.lonMax-bounds.lonMin));
