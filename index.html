@@ -4,16 +4,6 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Atlas — quiz de géographie</title>
-<!--
-  EMPLACEMENT POUR LE SCRIPT GOOGLE ADSENSE
-  Une fois ton compte AdSense validé, colle ici le script fourni par Google,
-  du type :
-  <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-XXXXXXXXXXXXXXXX" crossorigin="anonymous"></script>
-  Puis, dans chaque bloc "EMPLACEMENT PUBLICITAIRE" plus bas dans le body,
-  remplace le contenu du <div class="ad-slot"> par le bloc <ins class="adsbygoogle">
-  que Google te donnera pour cet emplacement, suivi de :
-  <script>(adsbygoogle = window.adsbygoogle || []).push({});</script>
--->
 <style>
   :root{
     --ink:#141b2d;
@@ -219,21 +209,6 @@
   th,td{text-align:left;padding:5px 8px;border-bottom:1px solid rgba(0,0,0,0.08);}
   th{color:var(--ink-soft);font-weight:600;}
 
-  .ad-slot{
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    min-height:90px;
-    border:1px dashed var(--paper-dim);
-    border-radius:2px;
-    color:var(--paper-dim);
-    font-size:0.78rem;
-    letter-spacing:0.02em;
-    margin-bottom:22px;
-    padding:10px;
-    text-align:center;
-  }
-
   @media (max-width:520px){
     h1{font-size:1.7rem;}
     .panel{padding:20px 18px 18px;}
@@ -251,11 +226,6 @@
       <button class="mode-btn" data-mode="country">Pays &amp; capitales</button>
     </nav>
   </header>
-
-  <div class="ad-slot" id="adTop">
-    <!-- EMPLACEMENT PUBLICITAIRE (haut de page) — remplace ce commentaire par ton bloc <ins class="adsbygoogle">... -->
-    Emplacement publicitaire
-  </div>
 
   <div id="setupDept" class="panel">
     <p style="margin-top:0;font-family:var(--serif);font-size:1.1rem;">Quiz des départements français</p>
@@ -324,11 +294,6 @@
   <div id="result" class="panel hidden">
     <p id="finalScoreText"></p>
     <button class="btn" id="restartBtn">Recommencer</button>
-  </div>
-
-  <div class="ad-slot" id="adBottom">
-    <!-- EMPLACEMENT PUBLICITAIRE (bas de page) — remplace ce commentaire par ton bloc <ins class="adsbygoogle">... -->
-    Emplacement publicitaire
   </div>
 
   <details id="revision">
