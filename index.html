@@ -36,9 +36,9 @@
     min-height:100vh;
   }
   #app{
-    max-width:760px;
+    max-width:1040px;
     margin:0 auto;
-    padding:32px 20px 64px;
+    padding:32px 24px 64px;
   }
   header{
     display:flex;
@@ -392,44 +392,73 @@ const DEPARTMENTS = [
 ].map(d=>({code:d[0],nom:d[1],chefLieu:d[2],lat:d[3],lon:d[4]}));
 
 const COUNTRIES = [
-["France","Paris",48.86,2.35,"Europe"],["Allemagne","Berlin",52.52,13.40,"Europe"],
-["Espagne","Madrid",40.42,-3.70,"Europe"],["Italie","Rome",41.90,12.50,"Europe"],
-["Portugal","Lisbonne",38.72,-9.14,"Europe"],["Royaume-Uni","Londres",51.51,-0.13,"Europe"],
-["Irlande","Dublin",53.35,-6.26,"Europe"],["Belgique","Bruxelles",50.85,4.35,"Europe"],
-["Pays-Bas","Amsterdam",52.37,4.90,"Europe"],["Luxembourg","Luxembourg",49.61,6.13,"Europe"],
-["Suisse","Berne",46.95,7.45,"Europe"],["Autriche","Vienne",48.21,16.37,"Europe"],
-["Danemark","Copenhague",55.68,12.57,"Europe"],["Suède","Stockholm",59.33,18.06,"Europe"],
-["Norvège","Oslo",59.91,10.75,"Europe"],["Finlande","Helsinki",60.17,24.94,"Europe"],
-["Islande","Reykjavik",64.15,-21.94,"Europe"],["Pologne","Varsovie",52.23,21.01,"Europe"],
-["République tchèque","Prague",50.09,14.42,"Europe"],["Slovaquie","Bratislava",48.15,17.11,"Europe"],
-["Hongrie","Budapest",47.50,19.04,"Europe"],["Roumanie","Bucarest",44.43,26.10,"Europe"],
-["Bulgarie","Sofia",42.70,23.32,"Europe"],["Grèce","Athènes",37.98,23.73,"Europe"],
-["Croatie","Zagreb",45.81,15.98,"Europe"],["Slovénie","Ljubljana",46.06,14.51,"Europe"],
-["Serbie","Belgrade",44.79,20.45,"Europe"],["Bosnie-Herzégovine","Sarajevo",43.86,18.41,"Europe"],
-["Monténégro","Podgorica",42.44,19.26,"Europe"],["Macédoine du Nord","Skopje",42.00,21.43,"Europe"],
-["Albanie","Tirana",41.33,19.82,"Europe"],["Estonie","Tallinn",59.44,24.75,"Europe"],
-["Lettonie","Riga",56.95,24.11,"Europe"],["Lituanie","Vilnius",54.69,25.28,"Europe"],
-["Ukraine","Kiev",50.45,30.52,"Europe"],["Biélorussie","Minsk",53.90,27.57,"Europe"],
-["Moldavie","Chisinau",47.01,28.86,"Europe"],["Russie","Moscou",55.75,37.62,"Europe"],
-["Malte","La Valette",35.90,14.51,"Europe"],["Chypre","Nicosie",35.17,33.36,"Europe"],
-["Monaco","Monaco",43.73,7.42,"Europe"],["Andorre","Andorre-la-Vieille",42.51,1.52,"Europe"],
-["Saint-Marin","Saint-Marin",43.94,12.45,"Europe"],["Liechtenstein","Vaduz",47.14,9.52,"Europe"],
-["États-Unis","Washington",38.90,-77.04,"Monde"],["Canada","Ottawa",45.42,-75.70,"Monde"],
-["Mexique","Mexico",19.43,-99.13,"Monde"],["Brésil","Brasília",-15.79,-47.88,"Monde"],
-["Argentine","Buenos Aires",-34.60,-58.38,"Monde"],["Chili","Santiago",-33.45,-70.67,"Monde"],
-["Pérou","Lima",-12.05,-77.04,"Monde"],["Colombie","Bogota",4.71,-74.07,"Monde"],
-["Chine","Pékin",39.90,116.40,"Monde"],["Japon","Tokyo",35.68,139.69,"Monde"],
-["Corée du Sud","Séoul",37.57,126.98,"Monde"],["Inde","New Delhi",28.61,77.21,"Monde"],
-["Indonésie","Jakarta",-6.21,106.85,"Monde"],["Australie","Canberra",-35.28,149.13,"Monde"],
-["Nouvelle-Zélande","Wellington",-41.29,174.78,"Monde"],["Égypte","Le Caire",30.04,31.24,"Monde"],
-["Afrique du Sud","Pretoria",-25.75,28.19,"Monde"],["Nigeria","Abuja",9.08,7.53,"Monde"],
-["Kenya","Nairobi",-1.29,36.82,"Monde"],["Maroc","Rabat",34.02,-6.83,"Monde"],
-["Algérie","Alger",36.75,3.06,"Monde"],["Tunisie","Tunis",36.81,10.18,"Monde"],
-["Turquie","Ankara",39.93,32.86,"Monde"],["Arabie saoudite","Riyad",24.71,46.68,"Monde"],
-["Israël","Jérusalem",31.77,35.21,"Monde"],["Émirats arabes unis","Abou Dabi",24.47,54.37,"Monde"],
-["Iran","Téhéran",35.69,51.39,"Monde"],["Pakistan","Islamabad",33.68,73.05,"Monde"],
-["Thaïlande","Bangkok",13.75,100.50,"Monde"],["Vietnam","Hanoï",21.03,105.85,"Monde"]
-].map(c=>({nom:c[0],capitale:c[1],lat:c[2],lon:c[3],region:c[4]}));
+["France","Paris",48.86,2.35,"Europe","FRA"],["Allemagne","Berlin",52.52,13.40,"Europe","DEU"],
+["Espagne","Madrid",40.42,-3.70,"Europe","ESP"],["Italie","Rome",41.90,12.50,"Europe","ITA"],
+["Portugal","Lisbonne",38.72,-9.14,"Europe","PRT"],["Royaume-Uni","Londres",51.51,-0.13,"Europe","GBR"],
+["Irlande","Dublin",53.35,-6.26,"Europe","IRL"],["Belgique","Bruxelles",50.85,4.35,"Europe","BEL"],
+["Pays-Bas","Amsterdam",52.37,4.90,"Europe","NLD"],["Luxembourg","Luxembourg",49.61,6.13,"Europe","LUX"],
+["Suisse","Berne",46.95,7.45,"Europe","CHE"],["Autriche","Vienne",48.21,16.37,"Europe","AUT"],
+["Danemark","Copenhague",55.68,12.57,"Europe","DNK"],["Suède","Stockholm",59.33,18.06,"Europe","SWE"],
+["Norvège","Oslo",59.91,10.75,"Europe","NOR"],["Finlande","Helsinki",60.17,24.94,"Europe","FIN"],
+["Islande","Reykjavik",64.15,-21.94,"Europe","ISL"],["Pologne","Varsovie",52.23,21.01,"Europe","POL"],
+["République tchèque","Prague",50.09,14.42,"Europe","CZE"],["Slovaquie","Bratislava",48.15,17.11,"Europe","SVK"],
+["Hongrie","Budapest",47.50,19.04,"Europe","HUN"],["Roumanie","Bucarest",44.43,26.10,"Europe","ROU"],
+["Bulgarie","Sofia",42.70,23.32,"Europe","BGR"],["Grèce","Athènes",37.98,23.73,"Europe","GRC"],
+["Croatie","Zagreb",45.81,15.98,"Europe","HRV"],["Slovénie","Ljubljana",46.06,14.51,"Europe","SVN"],
+["Serbie","Belgrade",44.79,20.45,"Europe","SRB"],["Bosnie-Herzégovine","Sarajevo",43.86,18.41,"Europe","BIH"],
+["Monténégro","Podgorica",42.44,19.26,"Europe","MNE"],["Macédoine du Nord","Skopje",42.00,21.43,"Europe","MKD"],
+["Albanie","Tirana",41.33,19.82,"Europe","ALB"],["Estonie","Tallinn",59.44,24.75,"Europe","EST"],
+["Lettonie","Riga",56.95,24.11,"Europe","LVA"],["Lituanie","Vilnius",54.69,25.28,"Europe","LTU"],
+["Ukraine","Kiev",50.45,30.52,"Europe","UKR"],["Biélorussie","Minsk",53.90,27.57,"Europe","BLR"],
+["Moldavie","Chisinau",47.01,28.86,"Europe","MDA"],["Russie","Moscou",55.75,37.62,"Europe","RUS"],
+["Malte","La Valette",35.90,14.51,"Europe","MLT"],["Chypre","Nicosie",35.17,33.36,"Europe","CYP"],
+["Monaco","Monaco",43.73,7.42,"Europe","MCO"],["Andorre","Andorre-la-Vieille",42.51,1.52,"Europe","AND"],
+["Saint-Marin","Saint-Marin",43.94,12.45,"Europe","SMR"],["Liechtenstein","Vaduz",47.14,9.52,"Europe","LIE"],
+["États-Unis","Washington",38.90,-77.04,"Monde","USA"],["Canada","Ottawa",45.42,-75.70,"Monde","CAN"],
+["Mexique","Mexico",19.43,-99.13,"Monde","MEX"],["Brésil","Brasília",-15.79,-47.88,"Monde","BRA"],
+["Argentine","Buenos Aires",-34.60,-58.38,"Monde","ARG"],["Chili","Santiago",-33.45,-70.67,"Monde","CHL"],
+["Pérou","Lima",-12.05,-77.04,"Monde","PER"],["Colombie","Bogota",4.71,-74.07,"Monde","COL"],
+["Chine","Pékin",39.90,116.40,"Monde","CHN"],["Japon","Tokyo",35.68,139.69,"Monde","JPN"],
+["Corée du Sud","Séoul",37.57,126.98,"Monde","KOR"],["Inde","New Delhi",28.61,77.21,"Monde","IND"],
+["Indonésie","Jakarta",-6.21,106.85,"Monde","IDN"],["Australie","Canberra",-35.28,149.13,"Monde","AUS"],
+["Nouvelle-Zélande","Wellington",-41.29,174.78,"Monde","NZL"],["Égypte","Le Caire",30.04,31.24,"Monde","EGY"],
+["Afrique du Sud","Pretoria",-25.75,28.19,"Monde","ZAF"],["Nigeria","Abuja",9.08,7.53,"Monde","NGA"],
+["Kenya","Nairobi",-1.29,36.82,"Monde","KEN"],["Maroc","Rabat",34.02,-6.83,"Monde","MAR"],
+["Algérie","Alger",36.75,3.06,"Monde","DZA"],["Tunisie","Tunis",36.81,10.18,"Monde","TUN"],
+["Turquie","Ankara",39.93,32.86,"Monde","TUR"],["Arabie saoudite","Riyad",24.71,46.68,"Monde","SAU"],
+["Israël","Jérusalem",31.77,35.21,"Monde","ISR"],["Émirats arabes unis","Abou Dabi",24.47,54.37,"Monde","ARE"],
+["Iran","Téhéran",35.69,51.39,"Monde","IRN"],["Pakistan","Islamabad",33.68,73.05,"Monde","PAK"],
+["Thaïlande","Bangkok",13.75,100.50,"Monde","THA"],["Vietnam","Hanoï",21.03,105.85,"Monde","VNM"],
+["Libye","Tripoli",32.87,13.19,"Monde","LBY"],["Soudan","Khartoum",15.50,32.53,"Monde","SDN"],
+["Éthiopie","Addis-Abeba",9.03,38.74,"Monde","ETH"],["Ghana","Accra",5.60,-0.19,"Monde","GHA"],
+["Côte d'Ivoire","Yamoussoukro",6.83,-5.29,"Monde","CIV"],["Sénégal","Dakar",14.72,-17.47,"Monde","SEN"],
+["Mali","Bamako",12.65,-8.00,"Monde","MLI"],["Cameroun","Yaoundé",3.87,11.52,"Monde","CMR"],
+["République démocratique du Congo","Kinshasa",-4.32,15.31,"Monde","COD"],["République du Congo","Brazzaville",-4.26,15.24,"Monde","COG"],
+["Angola","Luanda",-8.84,13.23,"Monde","AGO"],["Zambie","Lusaka",-15.39,28.32,"Monde","ZMB"],
+["Zimbabwe","Harare",-17.83,31.05,"Monde","ZWE"],["Mozambique","Maputo",-25.97,32.57,"Monde","MOZ"],
+["Tanzanie","Dodoma",-6.16,35.75,"Monde","TZA"],["Ouganda","Kampala",0.35,32.58,"Monde","UGA"],
+["Namibie","Windhoek",-22.56,17.08,"Monde","NAM"],["Botswana","Gaborone",-24.65,25.91,"Monde","BWA"],
+["Madagascar","Antananarivo",-18.88,47.51,"Monde","MDG"],["Rwanda","Kigali",-1.95,30.06,"Monde","RWA"],
+["Mongolie","Oulan-Bator",47.92,106.92,"Monde","MNG"],["Malaisie","Kuala Lumpur",3.14,101.69,"Monde","MYS"],
+["Philippines","Manille",14.60,120.98,"Monde","PHL"],["Birmanie","Naypyidaw",19.76,96.08,"Monde","MMR"],
+["Cambodge","Phnom Penh",11.55,104.92,"Monde","KHM"],["Laos","Vientiane",17.97,102.60,"Monde","LAO"],
+["Bangladesh","Dacca",23.81,90.41,"Monde","BGD"],["Sri Lanka","Colombo",6.93,79.85,"Monde","LKA"],
+["Népal","Katmandou",27.72,85.32,"Monde","NPL"],["Kazakhstan","Astana",51.18,71.45,"Monde","KAZ"],
+["Ouzbékistan","Tachkent",41.30,69.24,"Monde","UZB"],["Irak","Bagdad",33.31,44.36,"Monde","IRQ"],
+["Jordanie","Amman",31.95,35.93,"Monde","JOR"],["Liban","Beyrouth",33.89,35.50,"Monde","LBN"],
+["Syrie","Damas",33.51,36.29,"Monde","SYR"],["Qatar","Doha",25.29,51.53,"Monde","QAT"],
+["Koweït","Koweït City",29.38,47.98,"Monde","KWT"],["Oman","Mascate",23.61,58.59,"Monde","OMN"],
+["Yémen","Sanaa",15.35,44.21,"Monde","YEM"],["Corée du Nord","Pyongyang",39.02,125.75,"Monde","PRK"],
+["Taïwan","Taipei",25.03,121.57,"Monde","TWN"],["Afghanistan","Kaboul",34.53,69.17,"Monde","AFG"],
+["Venezuela","Caracas",10.48,-66.90,"Monde","VEN"],["Équateur","Quito",-0.18,-78.47,"Monde","ECU"],
+["Bolivie","La Paz",-16.50,-68.15,"Monde","BOL"],["Paraguay","Asuncion",-25.28,-57.63,"Monde","PRY"],
+["Uruguay","Montevideo",-34.90,-56.16,"Monde","URY"],["Cuba","La Havane",23.13,-82.38,"Monde","CUB"],
+["Guatemala","Guatemala",14.63,-90.51,"Monde","GTM"],["Costa Rica","San José",9.93,-84.08,"Monde","CRI"],
+["Panama","Panama",8.98,-79.52,"Monde","PAN"],["République dominicaine","Saint-Domingue",18.49,-69.90,"Monde","DOM"],
+["Honduras","Tegucigalpa",14.10,-87.22,"Monde","HND"],["Nicaragua","Managua",12.11,-86.24,"Monde","NIC"],
+["Salvador","San Salvador",13.69,-89.22,"Monde","SLV"],["Papouasie-Nouvelle-Guinée","Port Moresby",-9.48,147.15,"Monde","PNG"],
+["Fidji","Suva",-18.14,178.44,"Monde","FJI"]
+].map(c=>({nom:c[0],capitale:c[1],lat:c[2],lon:c[3],region:c[4],iso3:c[5]}));
 
 // ---------- STATE ----------
 let mode = "dept";
@@ -579,6 +608,40 @@ async function loadDeptGeo(){
 }
 loadDeptGeo();
 
+// ---------- REAL COUNTRY BORDERS (loaded once, with graceful fallback) ----------
+let COUNTRY_GEO = null; // iso3 -> GeoJSON geometry
+let countryGeoReady = false;
+
+async function loadCountryGeo(){
+  try{
+    const res = await fetch("https://raw.githubusercontent.com/johan/world.geo.json/master/countries.geo.json");
+    if(!res.ok) throw new Error("HTTP " + res.status);
+    const data = await res.json();
+    const geo = {};
+    data.features.forEach(f=>{ if(f.id) geo[f.id] = f.geometry; });
+    COUNTRY_GEO = geo;
+    countryGeoReady = true;
+    if(mode === "country" && !document.getElementById("quiz").classList.contains("hidden")) renderMap();
+  } catch(e){
+    console.warn("Contours des pays indisponibles, utilisation de la carte simplifiée.", e);
+    countryGeoReady = false;
+  }
+}
+loadCountryGeo();
+
+function computeGeomBounds(geoms, padRatio){
+  let lonMin=Infinity, lonMax=-Infinity, latMin=Infinity, latMax=-Infinity;
+  geoms.forEach(geometry=>{
+    const polys = geometry.type==="Polygon" ? [geometry.coordinates] : geometry.coordinates;
+    polys.forEach(rings=>rings.forEach(ring=>ring.forEach(([lon,lat])=>{
+      if(lon<lonMin) lonMin=lon; if(lon>lonMax) lonMax=lon;
+      if(lat<latMin) latMin=lat; if(lat>latMax) latMax=lat;
+    })));
+  });
+  const lonPad = (lonMax-lonMin) * padRatio, latPad = (latMax-latMin) * padRatio;
+  return {lonMin:lonMin-lonPad, lonMax:lonMax+lonPad, latMin:latMin-latPad, latMax:latMax+latPad};
+}
+
 function geometryToPathD(geometry, bounds, w, h, pad){
   const polys = geometry.type==="Polygon" ? [geometry.coordinates] : geometry.coordinates;
   let d = "";
@@ -611,14 +674,28 @@ function renderMap(){
   const svg = document.getElementById("mapSvg");
   const isDept = mode === "dept";
   const w = isDept ? 620 : 900;
-  const useRealGeo = isDept && deptGeoReady;
-  const bounds = useRealGeo ? computeBoundsPadded(DEPT_GEO_BOUNDS, 0.025) : (isDept ? DEPT_BOUNDS : computeBounds(activeSet, 0.10));
+  const useRealDeptGeo = isDept && deptGeoReady;
+  const useRealCountryGeo = !isDept && countryGeoReady;
+
+  let bounds;
+  let countryGeoms = [];
+  if(useRealDeptGeo){
+    bounds = computeBoundsPadded(DEPT_GEO_BOUNDS, 0.025);
+  } else if(useRealCountryGeo){
+    countryGeoms = activeSet.map(item => COUNTRY_GEO[item.iso3]).filter(Boolean);
+    bounds = countryGeoms.length ? computeGeomBounds(countryGeoms, 0.08) : computeBounds(activeSet, 0.10);
+  } else if(isDept){
+    bounds = DEPT_BOUNDS;
+  } else {
+    bounds = computeBounds(activeSet, 0.10);
+  }
+
   let h = isDept ? 430 : Math.round(w * (bounds.latMax-bounds.latMin) / (bounds.lonMax-bounds.lonMin));
   if(!isDept) h = Math.max(300, Math.min(560, h));
   svg.setAttribute("viewBox", "0 0 " + w + " " + h);
   svg.innerHTML = "";
 
-  if(isDept && useRealGeo){
+  if(isDept && useRealDeptGeo){
     activeSet.forEach((item, idx)=>{
       const geom = DEPT_GEO[item.code];
       if(!geom) return;
@@ -631,8 +708,16 @@ function renderMap(){
     const mainlandIdx = [], corsicaIdx = [];
     activeSet.forEach((d,i)=>{ (d.code==="2A"||d.code==="2B" ? corsicaIdx : mainlandIdx).push(i); });
     buildRegionBackground(svg, points, mainlandIdx, corsicaIdx, bounds, w, h);
+  } else if(useRealCountryGeo){
+    activeSet.forEach((item, idx)=>{
+      const geom = COUNTRY_GEO[item.iso3];
+      if(!geom) return; // handled by the dot fallback just below
+      const d = geometryToPathD(geom, bounds, w, h, 20);
+      svg.insertAdjacentHTML("beforeend", `<path class="dept-path" data-idx="${idx}" d="${d}"/>`);
+    });
+    svg.querySelectorAll(".dept-path").forEach(p=>p.addEventListener("click", onDotClick));
   } else {
-    // graticule for a cartographic feel (world map only)
+    // graticule for a cartographic feel (fallback world map only)
     const step = 10;
     for(let lon=Math.ceil(bounds.lonMin/step)*step; lon<=bounds.lonMax; lon+=step){
       const [x1,y1] = project({lat:bounds.latMin,lon}, bounds, w, h, 20);
@@ -646,19 +731,21 @@ function renderMap(){
     }
   }
 
-  if(!useRealGeo){
-    activeSet.forEach((item, idx)=>{
-      const [x,y] = project(item, bounds, w, h, 20);
-      const c = document.createElementNS("http://www.w3.org/2000/svg","circle");
-      c.setAttribute("cx", x);
-      c.setAttribute("cy", y);
-      c.setAttribute("r", 4.5);
-      c.setAttribute("class","dot");
-      c.dataset.idx = idx;
-      c.addEventListener("click", onDotClick);
-      svg.appendChild(c);
-    });
-  }
+  // dots: always needed in mosaic/graticule fallback mode, and per-item for any
+  // department/country whose real shape wasn't found (keeps the quiz clickable regardless)
+  activeSet.forEach((item, idx)=>{
+    const hasRealShape = (useRealDeptGeo && DEPT_GEO[item.code]) || (useRealCountryGeo && COUNTRY_GEO[item.iso3]);
+    if(hasRealShape) return;
+    const [x,y] = project(item, bounds, w, h, 20);
+    const c = document.createElementNS("http://www.w3.org/2000/svg","circle");
+    c.setAttribute("cx", x);
+    c.setAttribute("cy", y);
+    c.setAttribute("r", 4.5);
+    c.setAttribute("class","dot");
+    c.dataset.idx = idx;
+    c.addEventListener("click", onDotClick);
+    svg.appendChild(c);
+  });
 }
 
 function onDotClick(e){
