@@ -3,15 +3,16 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Atlas — quiz de géographie</title>
+<title>GeoGames — quiz de géographie</title>
 <style>
   :root{
-    --ink:#141b2d;
-    --ink-soft:#2a3552;
-    --paper:#efe8d6;
-    --paper-dim:#c9c2ab;
-    --gold:#caa155;
-    --gold-deep:#a9813c;
+    --ink:#11182a;
+    --ink-soft:#283152;
+    --paper:#f3ead8;
+    --paper-dim:#cabb9e;
+    --gold:#cc9f4f;
+    --gold-deep:#a97c2c;
+    --teal:#4f8f88;
     --sage:#6f9a6e;
     --rust:#b6543c;
     --serif: "Iowan Old Style", "Palatino Linotype", Georgia, serif;
@@ -20,7 +21,9 @@
   *{box-sizing:border-box;}
   html,body{margin:0;padding:0;}
   body{
-    background:var(--ink);
+    background:
+      radial-gradient(circle at 1px 1px, rgba(255,255,255,0.05) 1px, transparent 0) 0 0/22px 22px,
+      radial-gradient(1200px 700px at 15% -10%, #1a2340 0%, var(--ink) 55%);
     color:var(--paper);
     font-family:var(--sans);
     min-height:100vh;
@@ -33,42 +36,52 @@
   header{
     display:flex;
     flex-wrap:wrap;
-    align-items:baseline;
+    align-items:flex-end;
     justify-content:space-between;
     gap:16px;
     border-bottom:1px solid var(--ink-soft);
     padding-bottom:18px;
     margin-bottom:28px;
   }
+  .brand{display:flex; flex-direction:column; gap:2px;}
   h1{
     font-family:var(--serif);
     font-weight:400;
-    font-size:2.1rem;
-    letter-spacing:0.02em;
+    font-size:2.3rem;
+    letter-spacing:0.01em;
     margin:0;
     color:var(--paper);
   }
   h1 span{color:var(--gold);}
-  nav{display:flex;gap:22px;}
+  .tagline{font-size:0.82rem; color:var(--paper-dim); letter-spacing:0.04em; text-transform:uppercase;}
+  nav{
+    display:flex;
+    gap:4px;
+    background:var(--ink-soft);
+    padding:4px;
+    border-radius:999px;
+  }
   .mode-btn{
     background:none;
     border:none;
-    border-bottom:2px solid transparent;
     color:var(--paper-dim);
     font-family:var(--sans);
-    font-size:0.95rem;
-    padding:4px 0;
+    font-size:0.9rem;
+    padding:8px 18px;
+    border-radius:999px;
     cursor:pointer;
+    transition:background 0.15s, color 0.15s;
   }
-  .mode-btn.active{color:var(--gold);border-bottom-color:var(--gold);}
-  .mode-btn:hover{color:var(--paper);}
+  .mode-btn.active{color:var(--ink);background:var(--gold);}
+  .mode-btn:not(.active):hover{color:var(--paper);background:rgba(255,255,255,0.06);}
 
   .panel{
     background:var(--paper);
     color:var(--ink);
-    border-radius:3px;
-    padding:26px 26px 22px;
+    border-radius:16px;
+    padding:28px 28px 24px;
     margin-bottom:22px;
+    box-shadow:0 18px 40px -12px rgba(0,0,0,0.45);
   }
   .hidden{display:none !important;}
 
@@ -90,11 +103,11 @@
   select{
     font-family:var(--sans);
     font-size:0.95rem;
-    border:none;
-    border-bottom:1px solid var(--ink-soft);
-    background:transparent;
+    border:1px solid var(--paper-dim);
+    border-radius:8px;
+    background:rgba(255,255,255,0.5);
     color:var(--ink);
-    padding:4px 2px;
+    padding:8px 10px;
   }
   .radio-group{display:flex;gap:16px;}
   .radio-group label{display:flex;align-items:center;gap:6px;font-size:0.92rem;cursor:pointer;}
@@ -105,38 +118,56 @@
     background:var(--ink);
     color:var(--gold);
     border:none;
-    padding:10px 22px;
-    border-radius:2px;
+    padding:11px 24px;
+    border-radius:10px;
     cursor:pointer;
+    transition:transform 0.12s ease, box-shadow 0.12s ease, background 0.12s ease;
+    box-shadow:0 6px 16px -6px rgba(0,0,0,0.4);
   }
-  .btn:hover{background:var(--ink-soft);}
+  .btn:hover{background:var(--ink-soft); transform:translateY(-1px); box-shadow:0 10px 20px -8px rgba(0,0,0,0.5);}
+  .btn:active{transform:translateY(0);}
   .btn.secondary{
     background:transparent;
     color:var(--ink);
     border:1px solid var(--ink-soft);
+    box-shadow:none;
   }
-  .btn.secondary:hover{background:rgba(0,0,0,0.05);}
-  .btn:disabled{opacity:0.4;cursor:not-allowed;}
+  .btn.secondary:hover{background:rgba(0,0,0,0.05); box-shadow:none;}
+  .btn:disabled{opacity:0.4;cursor:not-allowed;transform:none;box-shadow:none;}
 
   .quiz-top{
     display:flex;
     justify-content:space-between;
     font-size:0.85rem;
     color:var(--ink-soft);
-    margin-bottom:6px;
+    margin-bottom:8px;
+  }
+  .progress-bar{
+    height:5px;
+    background:rgba(0,0,0,0.08);
+    border-radius:999px;
+    overflow:hidden;
+    margin-bottom:16px;
+  }
+  .progress-bar-fill{
+    height:100%;
+    background:var(--gold);
+    border-radius:999px;
+    transition:width 0.25s ease;
   }
   .prompt{
     font-family:var(--serif);
-    font-size:1.35rem;
+    font-size:1.4rem;
     margin:4px 0 16px;
   }
   .prompt strong{color:var(--gold-deep);font-weight:600;}
 
   .map-wrap{
     background:var(--ink);
-    border-radius:2px;
-    padding:8px;
+    border-radius:12px;
+    padding:10px;
     margin-bottom:18px;
+    box-shadow:inset 0 0 0 1px rgba(255,255,255,0.06);
   }
   svg{display:block;width:100%;height:auto;overflow:hidden;}
   .dot{
@@ -177,22 +208,23 @@
   .answer-fields input{
     font-family:var(--sans);
     font-size:1rem;
-    border:none;
-    border-bottom:1px solid var(--ink-soft);
-    background:transparent;
+    border:1px solid var(--paper-dim);
+    border-radius:8px;
+    background:rgba(255,255,255,0.5);
     color:var(--ink);
-    padding:6px 2px;
+    padding:10px 12px;
   }
-  .answer-fields input:focus{outline:none;border-bottom-color:var(--gold-deep);}
-  .answer-fields input.ok{border-bottom-color:var(--sage);}
-  .answer-fields input.bad{border-bottom-color:var(--rust);}
+  .answer-fields input:focus{outline:none;border-color:var(--gold-deep);box-shadow:0 0 0 3px rgba(204,159,79,0.2);}
+  .answer-fields input.ok{border-color:var(--sage);box-shadow:0 0 0 3px rgba(111,154,110,0.18);}
+  .answer-fields input.bad{border-color:var(--rust);box-shadow:0 0 0 3px rgba(182,84,60,0.16);}
 
   .actions{display:flex;gap:12px;margin-bottom:14px;}
   #feedback{
     font-size:0.92rem;
-    line-height:1.5;
+    line-height:1.6;
     min-height:1.4em;
   }
+  #feedback div{display:flex; align-items:flex-start; gap:8px;}
   #feedback .ok-line{color:#3f6b3f;}
   #feedback .bad-line{color:#8a3a26;}
 
@@ -201,8 +233,9 @@
   details{
     background:var(--paper);
     color:var(--ink);
-    border-radius:3px;
-    padding:14px 26px;
+    border-radius:16px;
+    padding:16px 28px;
+    box-shadow:0 18px 40px -12px rgba(0,0,0,0.45);
   }
   summary{cursor:pointer;font-size:0.92rem;color:var(--ink-soft);}
   table{width:100%;border-collapse:collapse;margin-top:14px;font-size:0.88rem;}
@@ -220,7 +253,10 @@
 <div id="app">
 
   <header>
-    <h1>Atlas<span>.</span></h1>
+    <div class="brand">
+      <h1>Geo<span>Games</span></h1>
+      <span class="tagline">Quiz de géographie</span>
+    </div>
     <nav id="modeNav">
       <button class="mode-btn active" data-mode="dept">Départements</button>
       <button class="mode-btn" data-mode="country">Pays &amp; capitales</button>
@@ -272,6 +308,7 @@
       <span>Question <span id="qIndex"></span> / <span id="qTotal"></span></span>
       <span>Score : <span id="scoreVal">0</span></span>
     </div>
+    <div class="progress-bar"><div class="progress-bar-fill" id="progressFill" style="width:0%"></div></div>
     <p class="prompt">Où se situe <strong id="targetName"></strong> ?</p>
     <div class="map-wrap">
       <svg id="mapSvg"></svg>
@@ -794,6 +831,7 @@ function showQuestion(){
   document.getElementById("qIndex").textContent = qPos+1;
   document.getElementById("qTotal").textContent = order.length;
   document.getElementById("scoreVal").textContent = score;
+  document.getElementById("progressFill").style.width = Math.round((qPos/order.length)*100) + "%";
   document.getElementById("targetName").textContent = currentTarget().nom;
   document.getElementById("inputNumber").value = "";
   document.getElementById("inputSecond").value = "";
@@ -836,11 +874,11 @@ function submitAnswer(){
   document.getElementById("inputSecond").classList.add(secondOk ? "ok":"bad");
 
   const parts = [];
-  parts.push(`<div class="${locationOk?'ok-line':'bad-line'}">${locationOk ? "Bonne position sur la carte." : "Mauvaise position — regarde le point vert."}</div>`);
+  parts.push(`<div class="${locationOk?'ok-line':'bad-line'}"><span>${locationOk?'✓':'✗'}</span><span>${locationOk ? "Bonne position sur la carte." : "Mauvaise position — regarde le point vert."}</span></div>`);
   if(isDept){
-    parts.push(`<div class="${numberOk?'ok-line':'bad-line'}">${numberOk ? "Bon numéro." : "Le bon numéro était " + target.code + "."}</div>`);
+    parts.push(`<div class="${numberOk?'ok-line':'bad-line'}"><span>${numberOk?'✓':'✗'}</span><span>${numberOk ? "Bon numéro." : "Le bon numéro était " + target.code + "."}</span></div>`);
   }
-  parts.push(`<div class="${secondOk?'ok-line':'bad-line'}">${secondOk ? "Bonne réponse." : (isDept ? "Le chef-lieu était " : "La capitale était ") + secondExpected + "."}</div>`);
+  parts.push(`<div class="${secondOk?'ok-line':'bad-line'}"><span>${secondOk?'✓':'✗'}</span><span>${secondOk ? "Bonne réponse." : (isDept ? "Le chef-lieu était " : "La capitale était ") + secondExpected + "."}</span></div>`);
   document.getElementById("feedback").innerHTML = parts.join("");
 
   document.getElementById("scoreVal").textContent = score;
