@@ -163,11 +163,62 @@
   .prompt strong{color:var(--gold-deep);font-weight:600;}
 
   .map-wrap{
+    position:relative;
     background:var(--ink);
     border-radius:12px;
     padding:10px;
     margin-bottom:18px;
     box-shadow:inset 0 0 0 1px rgba(255,255,255,0.06);
+  }
+  svg#mapSvg{cursor:grab; touch-action:none;}
+  .map-controls{
+    position:absolute;
+    top:20px;
+    right:20px;
+    display:flex;
+    flex-direction:column;
+    gap:6px;
+    z-index:2;
+  }
+  .map-controls button{
+    width:32px;
+    height:32px;
+    border-radius:8px;
+    border:1px solid var(--paper-dim);
+    background:var(--paper);
+    color:var(--ink);
+    font-size:1.05rem;
+    line-height:1;
+    cursor:pointer;
+    box-shadow:0 4px 10px rgba(0,0,0,0.3);
+  }
+  .map-controls button:hover{background:var(--gold);}
+  .profile-chip{
+    display:flex; align-items:center; gap:8px;
+    background:var(--ink-soft); border:none; color:var(--paper);
+    padding:7px 14px; border-radius:999px; cursor:pointer; font-family:var(--sans); font-size:0.85rem;
+  }
+  .profile-chip:hover{background:#39456a;}
+  .profile-chip .lvl{background:var(--gold); color:var(--ink); border-radius:999px; padding:1px 8px; font-size:0.75rem; font-weight:600;}
+  .badge{
+    display:flex; flex-direction:column; align-items:center; gap:4px;
+    width:96px; padding:12px 8px; border-radius:10px;
+    background:rgba(0,0,0,0.04); text-align:center; font-size:0.72rem; color:var(--ink);
+  }
+  .badge.locked{opacity:0.35;}
+  .badge .icon{font-size:1.5rem;}
+  .revision-tooltip{
+    position:absolute;
+    pointer-events:none;
+    background:var(--ink);
+    color:var(--paper);
+    padding:6px 11px;
+    border-radius:6px;
+    font-size:0.82rem;
+    box-shadow:0 8px 18px rgba(0,0,0,0.4);
+    transform:translate(-50%,-125%);
+    white-space:nowrap;
+    z-index:5;
   }
   svg{display:block;width:100%;height:auto;overflow:hidden;}
   .dot{
@@ -177,6 +228,12 @@
     cursor:pointer;
   }
   .dot:hover{fill-opacity:0.9;}
+  .dot.cont-europe{fill:var(--gold);}
+  .dot.cont-afrique{fill:#c9824f;}
+  .dot.cont-asie{fill:#4f8fa0;}
+  .dot.cont-ameriques{fill:#b0567c;}
+  .dot.cont-oceanie{fill:#7c9a5a;}
+  .dot.mini{stroke:var(--ink);stroke-width:1;fill-opacity:0.9;}
   .dot.selected{fill:var(--paper);fill-opacity:1;stroke:var(--gold);stroke-width:2;}
   .dot.correct{fill:var(--sage);fill-opacity:1;stroke:none;}
   .dot.wrong{fill:var(--rust);fill-opacity:1;stroke:none;}
@@ -186,9 +243,16 @@
   .national-border{stroke:var(--gold);stroke-opacity:0.8;stroke-width:1.6;fill:none;}
   .dept-path{fill:var(--gold);fill-opacity:0.14;stroke:var(--ink);stroke-opacity:0.55;stroke-width:1;cursor:pointer;transition:fill-opacity 0.15s;}
   .dept-path:hover{fill-opacity:0.32;}
+  .geo-bg{fill:var(--ink-soft);fill-opacity:0.35;stroke:var(--ink);stroke-opacity:0.4;stroke-width:0.5;pointer-events:none;}
+  .dept-path.cont-europe{fill:var(--gold);}
+  .dept-path.cont-afrique{fill:#c9824f;}
+  .dept-path.cont-asie{fill:#4f8fa0;}
+  .dept-path.cont-ameriques{fill:#b0567c;}
+  .dept-path.cont-oceanie{fill:#7c9a5a;}
   .dept-path.selected{fill-opacity:0.55;stroke:var(--paper);stroke-width:1.4;}
   .dept-path.correct{fill:var(--sage);fill-opacity:0.6;}
   .dept-path.wrong{fill:var(--rust);fill-opacity:0.55;}
+
 
   .answer-fields{
     display:flex;
@@ -257,11 +321,55 @@
       <h1>Geo<span>Games</span></h1>
       <span class="tagline">Quiz de géographie</span>
     </div>
-    <nav id="modeNav">
-      <button class="mode-btn active" data-mode="dept">Départements</button>
-      <button class="mode-btn" data-mode="country">Pays &amp; capitales</button>
-    </nav>
+    <div style="display:flex; align-items:center; gap:16px; flex-wrap:wrap;">
+      <button type="button" id="profileChip" class="profile-chip hidden"></button>
+      <nav id="modeNav">
+        <button class="mode-btn active" data-mode="dept">Départements</button>
+        <button class="mode-btn" data-mode="country">Pays &amp; capitales</button>
+      </nav>
+    </div>
   </header>
+
+  <div id="onboarding" class="panel hidden">
+    <p style="margin-top:0;font-family:var(--serif);font-size:1.1rem;">Bienvenue !</p>
+    <p style="font-size:0.9rem;color:var(--ink-soft);margin-top:-8px;">Choisis un pseudo pour suivre ton score, ton niveau et tes badges sur cet appareil.</p>
+    <div class="field-row">
+      <div class="field" style="flex:1;">
+        <span class="flabel">Pseudo</span>
+        <input type="text" id="onboardingPseudo" maxlength="20" placeholder="Ton pseudo" style="border:1px solid var(--paper-dim);border-radius:8px;background:rgba(255,255,255,0.5);color:var(--ink);padding:8px 10px;font-family:var(--sans);font-size:0.95rem;">
+      </div>
+    </div>
+    <button class="btn" id="onboardingStart">Commencer</button>
+  </div>
+
+  <div id="profilePanel" class="panel hidden">
+    <div style="display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:10px;">
+      <div>
+        <p style="margin:0;font-family:var(--serif);font-size:1.3rem;" id="profileName"></p>
+        <p style="margin:2px 0 0;font-size:0.85rem;color:var(--ink-soft);" id="profileLevel"></p>
+      </div>
+      <button class="btn secondary" id="profileClose" style="align-self:flex-start;">Fermer</button>
+    </div>
+    <div class="progress-bar" style="margin-top:14px;"><div class="progress-bar-fill" id="profileXpFill" style="width:0%"></div></div>
+    <p style="font-size:0.8rem;color:var(--ink-soft);margin:4px 0 20px;" id="profileXpText"></p>
+    <div class="field-row" style="margin-bottom:22px;">
+      <div class="field">
+        <span class="flabel">Parties jouées</span>
+        <p style="margin:0;font-size:1.3rem;font-family:var(--serif);" id="profileGames">0</p>
+      </div>
+      <div class="field">
+        <span class="flabel">Meilleur score — Départements</span>
+        <p style="margin:0;font-size:1.3rem;font-family:var(--serif);" id="profileBestDept">—</p>
+      </div>
+      <div class="field">
+        <span class="flabel">Meilleur score — Pays</span>
+        <p style="margin:0;font-size:1.3rem;font-family:var(--serif);" id="profileBestCountry">—</p>
+      </div>
+    </div>
+    <span class="flabel">Badges</span>
+    <div id="badgeGrid" style="display:flex;flex-wrap:wrap;gap:10px;margin-top:10px;"></div>
+    <button class="btn secondary" id="profileReset" style="margin-top:22px;">Réinitialiser mon profil</button>
+  </div>
 
   <div id="setupDept" class="panel">
     <p style="margin-top:0;font-family:var(--serif);font-size:1.1rem;">Quiz des départements français</p>
@@ -286,10 +394,14 @@
     <div class="field-row">
       <div class="field">
         <span class="flabel">Zone</span>
-        <div class="radio-group">
-          <label><input type="radio" name="zone" value="Europe" checked> Europe</label>
-          <label><input type="radio" name="zone" value="all"> Monde entier</label>
-        </div>
+        <select id="countryZone">
+          <option value="Europe">Europe</option>
+          <option value="Afrique">Afrique</option>
+          <option value="Asie">Asie</option>
+          <option value="Amériques">Amériques</option>
+          <option value="Océanie">Océanie</option>
+          <option value="all" selected>Monde entier</option>
+        </select>
       </div>
       <div class="field">
         <span class="flabel">Nombre de questions</span>
@@ -312,6 +424,11 @@
     <p class="prompt">Où se situe <strong id="targetName"></strong> ?</p>
     <div class="map-wrap">
       <svg id="mapSvg"></svg>
+      <div class="map-controls">
+        <button type="button" id="zoomIn" aria-label="Zoomer">+</button>
+        <button type="button" id="zoomOut" aria-label="Dézoomer">−</button>
+        <button type="button" id="zoomReset" aria-label="Réinitialiser le zoom">⟲</button>
+      </div>
     </div>
     <div class="answer-fields" id="answerFields">
       <label id="labelNumber">Numéro du département
@@ -330,11 +447,18 @@
 
   <div id="result" class="panel hidden">
     <p id="finalScoreText"></p>
+    <p id="finalXpText" style="font-size:0.9rem;color:var(--ink-soft);margin-top:-10px;"></p>
+    <div id="newBadges" style="display:flex;flex-wrap:wrap;gap:10px;margin:14px 0;"></div>
     <button class="btn" id="restartBtn">Recommencer</button>
   </div>
 
   <details id="revision">
     <summary>Table de révision (à consulter avant de te lancer)</summary>
+    <p style="font-size:0.85rem;color:var(--ink-soft);margin:14px 0 4px;">Survole la carte pour voir le nom de chaque zone.</p>
+    <div class="map-wrap" id="revisionMapWrap">
+      <svg id="revisionSvg"></svg>
+      <div id="revisionTooltip" class="revision-tooltip hidden"></div>
+    </div>
     <table id="revTable"><thead><tr id="revHead"></tr></thead><tbody id="revBody"></tbody></table>
   </details>
 
@@ -416,50 +540,50 @@ let COUNTRIES = [
 ["Malte","La Valette",35.90,14.51,"Europe","MLT"],["Chypre","Nicosie",35.17,33.36,"Europe","CYP"],
 ["Monaco","Monaco",43.73,7.42,"Europe","MCO"],["Andorre","Andorre-la-Vieille",42.51,1.52,"Europe","AND"],
 ["Saint-Marin","Saint-Marin",43.94,12.45,"Europe","SMR"],["Liechtenstein","Vaduz",47.14,9.52,"Europe","LIE"],
-["États-Unis","Washington",38.90,-77.04,"Monde","USA"],["Canada","Ottawa",45.42,-75.70,"Monde","CAN"],
-["Mexique","Mexico",19.43,-99.13,"Monde","MEX"],["Brésil","Brasília",-15.79,-47.88,"Monde","BRA"],
-["Argentine","Buenos Aires",-34.60,-58.38,"Monde","ARG"],["Chili","Santiago",-33.45,-70.67,"Monde","CHL"],
-["Pérou","Lima",-12.05,-77.04,"Monde","PER"],["Colombie","Bogota",4.71,-74.07,"Monde","COL"],
-["Chine","Pékin",39.90,116.40,"Monde","CHN"],["Japon","Tokyo",35.68,139.69,"Monde","JPN"],
-["Corée du Sud","Séoul",37.57,126.98,"Monde","KOR"],["Inde","New Delhi",28.61,77.21,"Monde","IND"],
-["Indonésie","Jakarta",-6.21,106.85,"Monde","IDN"],["Australie","Canberra",-35.28,149.13,"Monde","AUS"],
-["Nouvelle-Zélande","Wellington",-41.29,174.78,"Monde","NZL"],["Égypte","Le Caire",30.04,31.24,"Monde","EGY"],
-["Afrique du Sud","Pretoria",-25.75,28.19,"Monde","ZAF"],["Nigeria","Abuja",9.08,7.53,"Monde","NGA"],
-["Kenya","Nairobi",-1.29,36.82,"Monde","KEN"],["Maroc","Rabat",34.02,-6.83,"Monde","MAR"],
-["Algérie","Alger",36.75,3.06,"Monde","DZA"],["Tunisie","Tunis",36.81,10.18,"Monde","TUN"],
-["Turquie","Ankara",39.93,32.86,"Monde","TUR"],["Arabie saoudite","Riyad",24.71,46.68,"Monde","SAU"],
-["Israël","Jérusalem",31.77,35.21,"Monde","ISR"],["Émirats arabes unis","Abou Dabi",24.47,54.37,"Monde","ARE"],
-["Iran","Téhéran",35.69,51.39,"Monde","IRN"],["Pakistan","Islamabad",33.68,73.05,"Monde","PAK"],
-["Thaïlande","Bangkok",13.75,100.50,"Monde","THA"],["Vietnam","Hanoï",21.03,105.85,"Monde","VNM"],
-["Libye","Tripoli",32.87,13.19,"Monde","LBY"],["Soudan","Khartoum",15.50,32.53,"Monde","SDN"],
-["Éthiopie","Addis-Abeba",9.03,38.74,"Monde","ETH"],["Ghana","Accra",5.60,-0.19,"Monde","GHA"],
-["Côte d'Ivoire","Yamoussoukro",6.83,-5.29,"Monde","CIV"],["Sénégal","Dakar",14.72,-17.47,"Monde","SEN"],
-["Mali","Bamako",12.65,-8.00,"Monde","MLI"],["Cameroun","Yaoundé",3.87,11.52,"Monde","CMR"],
-["République démocratique du Congo","Kinshasa",-4.32,15.31,"Monde","COD"],["République du Congo","Brazzaville",-4.26,15.24,"Monde","COG"],
-["Angola","Luanda",-8.84,13.23,"Monde","AGO"],["Zambie","Lusaka",-15.39,28.32,"Monde","ZMB"],
-["Zimbabwe","Harare",-17.83,31.05,"Monde","ZWE"],["Mozambique","Maputo",-25.97,32.57,"Monde","MOZ"],
-["Tanzanie","Dodoma",-6.16,35.75,"Monde","TZA"],["Ouganda","Kampala",0.35,32.58,"Monde","UGA"],
-["Namibie","Windhoek",-22.56,17.08,"Monde","NAM"],["Botswana","Gaborone",-24.65,25.91,"Monde","BWA"],
-["Madagascar","Antananarivo",-18.88,47.51,"Monde","MDG"],["Rwanda","Kigali",-1.95,30.06,"Monde","RWA"],
-["Mongolie","Oulan-Bator",47.92,106.92,"Monde","MNG"],["Malaisie","Kuala Lumpur",3.14,101.69,"Monde","MYS"],
-["Philippines","Manille",14.60,120.98,"Monde","PHL"],["Birmanie","Naypyidaw",19.76,96.08,"Monde","MMR"],
-["Cambodge","Phnom Penh",11.55,104.92,"Monde","KHM"],["Laos","Vientiane",17.97,102.60,"Monde","LAO"],
-["Bangladesh","Dacca",23.81,90.41,"Monde","BGD"],["Sri Lanka","Colombo",6.93,79.85,"Monde","LKA"],
-["Népal","Katmandou",27.72,85.32,"Monde","NPL"],["Kazakhstan","Astana",51.18,71.45,"Monde","KAZ"],
-["Ouzbékistan","Tachkent",41.30,69.24,"Monde","UZB"],["Irak","Bagdad",33.31,44.36,"Monde","IRQ"],
-["Jordanie","Amman",31.95,35.93,"Monde","JOR"],["Liban","Beyrouth",33.89,35.50,"Monde","LBN"],
-["Syrie","Damas",33.51,36.29,"Monde","SYR"],["Qatar","Doha",25.29,51.53,"Monde","QAT"],
-["Koweït","Koweït City",29.38,47.98,"Monde","KWT"],["Oman","Mascate",23.61,58.59,"Monde","OMN"],
-["Yémen","Sanaa",15.35,44.21,"Monde","YEM"],["Corée du Nord","Pyongyang",39.02,125.75,"Monde","PRK"],
-["Taïwan","Taipei",25.03,121.57,"Monde","TWN"],["Afghanistan","Kaboul",34.53,69.17,"Monde","AFG"],
-["Venezuela","Caracas",10.48,-66.90,"Monde","VEN"],["Équateur","Quito",-0.18,-78.47,"Monde","ECU"],
-["Bolivie","La Paz",-16.50,-68.15,"Monde","BOL"],["Paraguay","Asuncion",-25.28,-57.63,"Monde","PRY"],
-["Uruguay","Montevideo",-34.90,-56.16,"Monde","URY"],["Cuba","La Havane",23.13,-82.38,"Monde","CUB"],
-["Guatemala","Guatemala",14.63,-90.51,"Monde","GTM"],["Costa Rica","San José",9.93,-84.08,"Monde","CRI"],
-["Panama","Panama",8.98,-79.52,"Monde","PAN"],["République dominicaine","Saint-Domingue",18.49,-69.90,"Monde","DOM"],
-["Honduras","Tegucigalpa",14.10,-87.22,"Monde","HND"],["Nicaragua","Managua",12.11,-86.24,"Monde","NIC"],
-["Salvador","San Salvador",13.69,-89.22,"Monde","SLV"],["Papouasie-Nouvelle-Guinée","Port Moresby",-9.48,147.15,"Monde","PNG"],
-["Fidji","Suva",-18.14,178.44,"Monde","FJI"]
+["États-Unis","Washington",38.90,-77.04,"Amériques","USA"],["Canada","Ottawa",45.42,-75.70,"Amériques","CAN"],
+["Mexique","Mexico",19.43,-99.13,"Amériques","MEX"],["Brésil","Brasília",-15.79,-47.88,"Amériques","BRA"],
+["Argentine","Buenos Aires",-34.60,-58.38,"Amériques","ARG"],["Chili","Santiago",-33.45,-70.67,"Amériques","CHL"],
+["Pérou","Lima",-12.05,-77.04,"Amériques","PER"],["Colombie","Bogota",4.71,-74.07,"Amériques","COL"],
+["Chine","Pékin",39.90,116.40,"Asie","CHN"],["Japon","Tokyo",35.68,139.69,"Asie","JPN"],
+["Corée du Sud","Séoul",37.57,126.98,"Asie","KOR"],["Inde","New Delhi",28.61,77.21,"Asie","IND"],
+["Indonésie","Jakarta",-6.21,106.85,"Asie","IDN"],["Australie","Canberra",-35.28,149.13,"Océanie","AUS"],
+["Nouvelle-Zélande","Wellington",-41.29,174.78,"Océanie","NZL"],["Égypte","Le Caire",30.04,31.24,"Afrique","EGY"],
+["Afrique du Sud","Pretoria",-25.75,28.19,"Afrique","ZAF"],["Nigeria","Abuja",9.08,7.53,"Afrique","NGA"],
+["Kenya","Nairobi",-1.29,36.82,"Afrique","KEN"],["Maroc","Rabat",34.02,-6.83,"Afrique","MAR"],
+["Algérie","Alger",36.75,3.06,"Afrique","DZA"],["Tunisie","Tunis",36.81,10.18,"Afrique","TUN"],
+["Turquie","Ankara",39.93,32.86,"Asie","TUR"],["Arabie saoudite","Riyad",24.71,46.68,"Asie","SAU"],
+["Israël","Jérusalem",31.77,35.21,"Asie","ISR"],["Émirats arabes unis","Abou Dabi",24.47,54.37,"Asie","ARE"],
+["Iran","Téhéran",35.69,51.39,"Asie","IRN"],["Pakistan","Islamabad",33.68,73.05,"Asie","PAK"],
+["Thaïlande","Bangkok",13.75,100.50,"Asie","THA"],["Vietnam","Hanoï",21.03,105.85,"Asie","VNM"],
+["Libye","Tripoli",32.87,13.19,"Afrique","LBY"],["Soudan","Khartoum",15.50,32.53,"Afrique","SDN"],
+["Éthiopie","Addis-Abeba",9.03,38.74,"Afrique","ETH"],["Ghana","Accra",5.60,-0.19,"Afrique","GHA"],
+["Côte d'Ivoire","Yamoussoukro",6.83,-5.29,"Afrique","CIV"],["Sénégal","Dakar",14.72,-17.47,"Afrique","SEN"],
+["Mali","Bamako",12.65,-8.00,"Afrique","MLI"],["Cameroun","Yaoundé",3.87,11.52,"Afrique","CMR"],
+["République démocratique du Congo","Kinshasa",-4.32,15.31,"Afrique","COD"],["République du Congo","Brazzaville",-4.26,15.24,"Afrique","COG"],
+["Angola","Luanda",-8.84,13.23,"Afrique","AGO"],["Zambie","Lusaka",-15.39,28.32,"Afrique","ZMB"],
+["Zimbabwe","Harare",-17.83,31.05,"Afrique","ZWE"],["Mozambique","Maputo",-25.97,32.57,"Afrique","MOZ"],
+["Tanzanie","Dodoma",-6.16,35.75,"Afrique","TZA"],["Ouganda","Kampala",0.35,32.58,"Afrique","UGA"],
+["Namibie","Windhoek",-22.56,17.08,"Afrique","NAM"],["Botswana","Gaborone",-24.65,25.91,"Afrique","BWA"],
+["Madagascar","Antananarivo",-18.88,47.51,"Afrique","MDG"],["Rwanda","Kigali",-1.95,30.06,"Afrique","RWA"],
+["Mongolie","Oulan-Bator",47.92,106.92,"Asie","MNG"],["Malaisie","Kuala Lumpur",3.14,101.69,"Asie","MYS"],
+["Philippines","Manille",14.60,120.98,"Asie","PHL"],["Birmanie","Naypyidaw",19.76,96.08,"Asie","MMR"],
+["Cambodge","Phnom Penh",11.55,104.92,"Asie","KHM"],["Laos","Vientiane",17.97,102.60,"Asie","LAO"],
+["Bangladesh","Dacca",23.81,90.41,"Asie","BGD"],["Sri Lanka","Colombo",6.93,79.85,"Asie","LKA"],
+["Népal","Katmandou",27.72,85.32,"Asie","NPL"],["Kazakhstan","Astana",51.18,71.45,"Asie","KAZ"],
+["Ouzbékistan","Tachkent",41.30,69.24,"Asie","UZB"],["Irak","Bagdad",33.31,44.36,"Asie","IRQ"],
+["Jordanie","Amman",31.95,35.93,"Asie","JOR"],["Liban","Beyrouth",33.89,35.50,"Asie","LBN"],
+["Syrie","Damas",33.51,36.29,"Asie","SYR"],["Qatar","Doha",25.29,51.53,"Asie","QAT"],
+["Koweït","Koweït City",29.38,47.98,"Asie","KWT"],["Oman","Mascate",23.61,58.59,"Asie","OMN"],
+["Yémen","Sanaa",15.35,44.21,"Asie","YEM"],["Corée du Nord","Pyongyang",39.02,125.75,"Asie","PRK"],
+["Taïwan","Taipei",25.03,121.57,"Asie","TWN"],["Afghanistan","Kaboul",34.53,69.17,"Asie","AFG"],
+["Venezuela","Caracas",10.48,-66.90,"Amériques","VEN"],["Équateur","Quito",-0.18,-78.47,"Amériques","ECU"],
+["Bolivie","La Paz",-16.50,-68.15,"Amériques","BOL"],["Paraguay","Asuncion",-25.28,-57.63,"Amériques","PRY"],
+["Uruguay","Montevideo",-34.90,-56.16,"Amériques","URY"],["Cuba","La Havane",23.13,-82.38,"Amériques","CUB"],
+["Guatemala","Guatemala",14.63,-90.51,"Amériques","GTM"],["Costa Rica","San José",9.93,-84.08,"Amériques","CRI"],
+["Panama","Panama",8.98,-79.52,"Amériques","PAN"],["République dominicaine","Saint-Domingue",18.49,-69.90,"Amériques","DOM"],
+["Honduras","Tegucigalpa",14.10,-87.22,"Amériques","HND"],["Nicaragua","Managua",12.11,-86.24,"Amériques","NIC"],
+["Salvador","San Salvador",13.69,-89.22,"Amériques","SLV"],["Papouasie-Nouvelle-Guinée","Port Moresby",-9.48,147.15,"Océanie","PNG"],
+["Fidji","Suva",-18.14,178.44,"Océanie","FJI"]
 ].map(c=>({nom:c[0],capitale:c[1],lat:c[2],lon:c[3],region:c[4],iso3:c[5]}));
 
 // ---------- STATE ----------
@@ -603,6 +727,7 @@ async function loadDeptGeo(){
     deptGeoReady = true;
     // if the person is already looking at a department map, upgrade it immediately
     if(mode === "dept" && !document.getElementById("quiz").classList.contains("hidden")) renderMap();
+    renderRevisionMap();
   } catch(e){
     console.warn("Contours détaillés indisponibles, utilisation de la carte simplifiée.", e);
     deptGeoReady = false;
@@ -624,6 +749,7 @@ async function loadCountryGeo(){
     COUNTRY_GEO = geo;
     countryGeoReady = true;
     if(mode === "country" && !document.getElementById("quiz").classList.contains("hidden")) renderMap();
+    renderRevisionMap();
   } catch(e){
     console.warn("Contours des pays indisponibles, utilisation de la carte simplifiée.", e);
     countryGeoReady = false;
@@ -657,10 +783,13 @@ async function loadFullCountryList(){
         capitale: CAPITAL_FR_OVERRIDES[c.cca3] || c.capital[0],
         lat: c.latlng[0],
         lon: c.latlng[1],
-        region: c.region === "Europe" ? "Europe" : "Monde",
+        region: ({Europe:"Europe",Africa:"Afrique",Asia:"Asie",Americas:"Amériques",Oceania:"Océanie"})[c.region] || "Monde",
         iso3: c.cca3
       }));
-    if(list.length > 100) COUNTRIES = list; // sanity check before trusting the fetched data
+    if(list.length > 100){
+      COUNTRIES = list; // sanity check before trusting the fetched data
+      if(mode === "country"){ renderRevisionTable(); renderRevisionMap(); }
+    }
   } catch(e){
     console.warn("Liste complète des pays indisponible, utilisation de la liste réduite.", e);
   }
@@ -698,6 +827,21 @@ function computeBoundsPadded(b, padRatio){
   return {lonMin:b.lonMin-lonPad, lonMax:b.lonMax+lonPad, latMin:b.latMin-latPad, latMax:b.latMax+latPad};
 }
 
+function regionSlug(region){
+  return (region||"").normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase();
+}
+
+function geometryPixelSpan(geometry, bounds, w, h, pad){
+  let minX=Infinity, maxX=-Infinity, minY=Infinity, maxY=-Infinity;
+  const polys = geometry.type==="Polygon" ? [geometry.coordinates] : geometry.coordinates;
+  polys.forEach(rings=>rings.forEach(ring=>ring.forEach(([lon,lat])=>{
+    const [x,y] = project({lat,lon}, bounds, w, h, pad);
+    if(x<minX)minX=x; if(x>maxX)maxX=x;
+    if(y<minY)minY=y; if(y>maxY)maxY=y;
+  })));
+  return {dx:maxX-minX, dy:maxY-minY, cx:(minX+maxX)/2, cy:(minY+maxY)/2};
+}
+
 function computeBounds(items, padRatio){
   const lats = items.map(p=>p.lat), lons = items.map(p=>p.lon);
   const latMin=Math.min(...lats), latMax=Math.max(...lats);
@@ -730,40 +874,53 @@ function renderMap(){
   if(!isDept) h = Math.max(300, Math.min(560, h));
   svg.setAttribute("viewBox", "0 0 " + w + " " + h);
   svg.innerHTML = "";
+  currentMapW = w; currentMapH = h;
+  mapZoom = 1; panX = 0; panY = 0;
+  const content = document.createElementNS("http://www.w3.org/2000/svg","g");
+  content.id = "mapContent";
+  svg.appendChild(content);
 
   if(isDept && useRealDeptGeo){
     activeSet.forEach((item, idx)=>{
       const geom = DEPT_GEO[item.code];
       if(!geom) return;
       const d = geometryToPathD(geom, bounds, w, h, 20);
-      svg.insertAdjacentHTML("beforeend", `<path class="dept-path" data-idx="${idx}" d="${d}"/>`);
+      content.insertAdjacentHTML("beforeend", `<path class="dept-path" data-idx="${idx}" d="${d}"/>`);
+      maybeAddTinyMarker(content, item, idx, geom, bounds, w, h);
     });
-    svg.querySelectorAll(".dept-path").forEach(p=>p.addEventListener("click", onDotClick));
+    content.querySelectorAll(".dept-path").forEach(p=>p.addEventListener("click", onDotClick));
   } else if(isDept){
     const points = activeSet.map(item => project(item, bounds, w, h, 20));
     const mainlandIdx = [], corsicaIdx = [];
     activeSet.forEach((d,i)=>{ (d.code==="2A"||d.code==="2B" ? corsicaIdx : mainlandIdx).push(i); });
-    buildRegionBackground(svg, points, mainlandIdx, corsicaIdx, bounds, w, h);
+    buildRegionBackground(content, points, mainlandIdx, corsicaIdx, bounds, w, h);
   } else if(useRealCountryGeo){
+    // full world backdrop for context, behind the playable countries
+    Object.values(COUNTRY_GEO).forEach(geom=>{
+      const d = geometryToPathD(geom, bounds, w, h, 20);
+      content.insertAdjacentHTML("beforeend", `<path class="geo-bg" d="${d}"/>`);
+    });
     activeSet.forEach((item, idx)=>{
       const geom = COUNTRY_GEO[item.iso3];
       if(!geom) return; // handled by the dot fallback just below
+      const cls = "dept-path cont-" + regionSlug(item.region);
       const d = geometryToPathD(geom, bounds, w, h, 20);
-      svg.insertAdjacentHTML("beforeend", `<path class="dept-path" data-idx="${idx}" d="${d}"/>`);
+      content.insertAdjacentHTML("beforeend", `<path class="${cls}" data-idx="${idx}" d="${d}"/>`);
+      maybeAddTinyMarker(content, item, idx, geom, bounds, w, h);
     });
-    svg.querySelectorAll(".dept-path").forEach(p=>p.addEventListener("click", onDotClick));
+    content.querySelectorAll(".dept-path").forEach(p=>p.addEventListener("click", onDotClick));
   } else {
     // graticule for a cartographic feel (fallback world map only)
     const step = 10;
     for(let lon=Math.ceil(bounds.lonMin/step)*step; lon<=bounds.lonMax; lon+=step){
       const [x1,y1] = project({lat:bounds.latMin,lon}, bounds, w, h, 20);
       const [x2,y2] = project({lat:bounds.latMax,lon}, bounds, w, h, 20);
-      svg.insertAdjacentHTML("beforeend", `<line class="grat" x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}"/>`);
+      content.insertAdjacentHTML("beforeend", `<line class="grat" x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}"/>`);
     }
     for(let lat=Math.ceil(bounds.latMin/step)*step; lat<=bounds.latMax; lat+=step){
       const [x1,y1] = project({lat,lon:bounds.lonMin}, bounds, w, h, 20);
       const [x2,y2] = project({lat,lon:bounds.lonMax}, bounds, w, h, 20);
-      svg.insertAdjacentHTML("beforeend", `<line class="grat" x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}"/>`);
+      content.insertAdjacentHTML("beforeend", `<line class="grat" x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}"/>`);
     }
   }
 
@@ -777,20 +934,119 @@ function renderMap(){
     c.setAttribute("cx", x);
     c.setAttribute("cy", y);
     c.setAttribute("r", 4.5);
-    c.setAttribute("class","dot");
+    c.setAttribute("class", "dot" + (!isDept && item.region ? " cont-"+regionSlug(item.region) : ""));
     c.dataset.idx = idx;
     c.addEventListener("click", onDotClick);
-    svg.appendChild(c);
+    content.appendChild(c);
   });
+  updateMapTransform();
+}
+
+// adds a small clickable marker on top of very small shapes (micro-states, Paris, etc.)
+// so they stay easy to spot and click even before zooming in
+function maybeAddTinyMarker(content, item, idx, geom, bounds, w, h){
+  const span = geometryPixelSpan(geom, bounds, w, h, 20);
+  const threshold = Math.min(w, h) * 0.014;
+  if(span.dx < threshold || span.dy < threshold){
+    const c = document.createElementNS("http://www.w3.org/2000/svg","circle");
+    c.setAttribute("cx", span.cx);
+    c.setAttribute("cy", span.cy);
+    c.setAttribute("r", 3.5);
+    c.setAttribute("class", "dot mini" + (item.region ? " cont-"+regionSlug(item.region) : ""));
+    c.dataset.idx = idx;
+    c.addEventListener("click", onDotClick);
+    content.appendChild(c);
+  }
 }
 
 function onDotClick(e){
+  if(suppressClick){ suppressClick = false; return; }
   if(answered) return;
   const idx = parseInt(e.currentTarget.dataset.idx,10);
   selectedIdx = idx;
   document.querySelectorAll("#mapSvg .dot, #mapSvg .dept-path").forEach(d=>d.classList.remove("selected"));
   e.currentTarget.classList.add("selected");
 }
+
+// ---------- MAP ZOOM & PAN ----------
+let mapZoom = 1, panX = 0, panY = 0;
+let currentMapW = 0, currentMapH = 0;
+let isPanning = false, dragMoved = false, suppressClick = false;
+let dragStart = null, panStart = null;
+
+function updateMapTransform(){
+  const g = document.getElementById("mapContent");
+  if(g) g.setAttribute("transform", `translate(${panX},${panY}) scale(${mapZoom})`);
+}
+
+function clampPan(){
+  const minX = (1-mapZoom) * currentMapW, maxX = 0;
+  const minY = (1-mapZoom) * currentMapH, maxY = 0;
+  panX = Math.min(maxX, Math.max(minX, panX));
+  panY = Math.min(maxY, Math.max(minY, panY));
+}
+
+function zoomBy(factor, aroundX, aroundY){
+  const newZoom = Math.min(6, Math.max(1, mapZoom * factor));
+  const cx = aroundX === undefined ? currentMapW/2 : aroundX;
+  const cy = aroundY === undefined ? currentMapH/2 : aroundY;
+  panX = cx - (cx-panX) * (newZoom/mapZoom);
+  panY = cy - (cy-panY) * (newZoom/mapZoom);
+  mapZoom = newZoom;
+  clampPan();
+  updateMapTransform();
+}
+
+function setupMapControls(){
+  const svg = document.getElementById("mapSvg");
+
+  svg.addEventListener("wheel", e=>{
+    e.preventDefault();
+    const rect = svg.getBoundingClientRect();
+    const scaleFactor = rect.width ? currentMapW/rect.width : 1;
+    const mx = (e.clientX-rect.left) * scaleFactor;
+    const my = (e.clientY-rect.top) * scaleFactor;
+    zoomBy(e.deltaY < 0 ? 1.15 : 1/1.15, mx, my);
+  }, {passive:false});
+
+  svg.addEventListener("pointerdown", e=>{
+    isPanning = true; dragMoved = false;
+    dragStart = {x:e.clientX, y:e.clientY};
+    panStart = {x:panX, y:panY};
+    svg.style.cursor = "grabbing";
+  });
+  svg.addEventListener("pointermove", e=>{
+    if(!isPanning) return;
+    const dx = e.clientX-dragStart.x, dy = e.clientY-dragStart.y;
+    if(!dragMoved && (Math.abs(dx)>4 || Math.abs(dy)>4)){
+      dragMoved = true;
+      svg.setPointerCapture(e.pointerId); // only capture once we know it's a real drag
+    }
+    if(!dragMoved) return;
+    const rect = svg.getBoundingClientRect();
+    const scaleFactor = rect.width ? currentMapW/rect.width : 1;
+    panX = panStart.x + dx*scaleFactor;
+    panY = panStart.y + dy*scaleFactor;
+    clampPan();
+    updateMapTransform();
+  });
+  svg.addEventListener("pointerup", ()=>{
+    isPanning = false;
+    svg.style.cursor = "grab";
+    if(dragMoved){
+      suppressClick = true;
+      setTimeout(()=>{ suppressClick = false; }, 0);
+    }
+  });
+  svg.addEventListener("pointerleave", ()=>{ isPanning = false; svg.style.cursor = "grab"; });
+
+  document.getElementById("zoomIn").addEventListener("click", ()=>zoomBy(1.3));
+  document.getElementById("zoomOut").addEventListener("click", ()=>zoomBy(1/1.3));
+  document.getElementById("zoomReset").addEventListener("click", ()=>{
+    mapZoom = 1; panX = 0; panY = 0; updateMapTransform();
+  });
+}
+setupMapControls();
 
 // ---------- QUIZ FLOW ----------
 function startQuiz(){
@@ -805,8 +1061,9 @@ function startQuiz(){
     const count = n === "96" ? activeSet.length : parseInt(n,10);
     order = shuffle(activeSet.map((_,i)=>i)).slice(0,count);
   } else {
-    const zone = document.querySelector('input[name="zone"]:checked').value;
-    activeSet = zone === "Europe" ? COUNTRIES.filter(c=>c.region==="Europe") : COUNTRIES;
+    const zone = document.getElementById("countryZone").value;
+    currentZone = zone;
+    activeSet = zone === "all" ? COUNTRIES : COUNTRIES.filter(c=>c.region===zone);
     const n = document.getElementById("countryCount").value;
     const count = n === "all" ? activeSet.length : Math.min(parseInt(n,10), activeSet.length);
     order = shuffle(activeSet.map((_,i)=>i)).slice(0,count);
@@ -900,7 +1157,135 @@ function endQuiz(){
   document.getElementById("quiz").classList.add("hidden");
   document.getElementById("result").classList.remove("hidden");
   document.getElementById("finalScoreText").textContent = "Score final : " + score + " / " + order.length;
+
+  const newBadgeIds = recordQuizResult(mode === "dept", currentZone, score, order.length);
+  document.getElementById("finalXpText").textContent = profile ? `+${score} XP — total : ${profile.xp} XP` : "";
+  const grid = document.getElementById("newBadges");
+  if(newBadgeIds.length){
+    grid.innerHTML = newBadgeIds.map(id=>{
+      const b = BADGES.find(x=>x.id===id);
+      return b ? `<div class="badge"><span class="icon">${b.icon}</span><span>Nouveau : ${b.label}</span></div>` : "";
+    }).join("");
+  } else {
+    grid.innerHTML = "";
+  }
 }
+
+// ---------- LOCAL PROFILE: pseudo, XP, levels, badges (saved in this browser only) ----------
+const PROFILE_KEY = "geogames_profile_v1";
+let profile = null;
+let currentZone = null;
+
+const BADGES = [
+  {id:"premier_quiz", icon:"🎯", label:"Premier quiz", cond:p=>p.gamesPlayed>=1},
+  {id:"dix_quiz", icon:"🔥", label:"10 quiz joués", cond:p=>p.gamesPlayed>=10},
+  {id:"cinquante_quiz", icon:"🏆", label:"50 quiz joués", cond:p=>p.gamesPlayed>=50},
+  {id:"score_parfait", icon:"⭐", label:"Score parfait", cond:p=>p.hasPerfect},
+  {id:"expert_dept", icon:"🗺️", label:"96/96 départements", cond:p=>p.deptPerfect96},
+  {id:"explorateur", icon:"🌍", label:"Explorateur (5 continents)", cond:p=>p.zonesPlayed && p.zonesPlayed.length>=5},
+  {id:"cent_bonnes", icon:"💯", label:"100 XP cumulés", cond:p=>p.xp>=100}
+];
+
+function escapeHtml(s){
+  return (s||"").replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+function loadProfile(){
+  try{
+    const raw = localStorage.getItem(PROFILE_KEY);
+    return raw ? JSON.parse(raw) : null;
+  } catch(e){ return null; }
+}
+function saveProfile(){
+  try{ localStorage.setItem(PROFILE_KEY, JSON.stringify(profile)); } catch(e){}
+}
+
+function ensureProfile(){
+  profile = loadProfile();
+  if(!profile || !profile.pseudo){
+    document.getElementById("onboarding").classList.remove("hidden");
+  } else {
+    renderProfileChip();
+  }
+}
+
+function renderProfileChip(){
+  if(!profile) return;
+  const chip = document.getElementById("profileChip");
+  const level = Math.floor(profile.xp/50) + 1;
+  chip.innerHTML = `<span>👤 ${escapeHtml(profile.pseudo)}</span><span class="lvl">Niv. ${level}</span>`;
+  chip.classList.remove("hidden");
+}
+
+function renderProfilePanel(){
+  if(!profile) return;
+  document.getElementById("profileName").textContent = profile.pseudo;
+  const level = Math.floor(profile.xp/50) + 1;
+  const xpIntoLevel = profile.xp % 50;
+  document.getElementById("profileLevel").textContent = "Niveau " + level;
+  document.getElementById("profileXpFill").style.width = Math.round((xpIntoLevel/50)*100) + "%";
+  document.getElementById("profileXpText").textContent = `${xpIntoLevel} / 50 XP jusqu'au niveau ${level+1} — ${profile.xp} XP au total`;
+  document.getElementById("profileGames").textContent = profile.gamesPlayed;
+  document.getElementById("profileBestDept").textContent = profile.bestDept ? `${profile.bestDept.score} / ${profile.bestDept.total}` : "—";
+  document.getElementById("profileBestCountry").textContent = profile.bestCountry ? `${profile.bestCountry.score} / ${profile.bestCountry.total}` : "—";
+
+  document.getElementById("badgeGrid").innerHTML = BADGES.map(b=>{
+    const earned = profile.badgesEarned.includes(b.id);
+    return `<div class="badge${earned?'':' locked'}"><span class="icon">${b.icon}</span><span>${b.label}</span></div>`;
+  }).join("");
+}
+
+function recordQuizResult(isDept, zone, quizScore, total){
+  if(!profile || !total) return [];
+  const before = new Set(profile.badgesEarned);
+  profile.xp += quizScore;
+  profile.gamesPlayed += 1;
+  if(quizScore === total) profile.hasPerfect = true;
+  if(isDept){
+    if(!profile.bestDept || quizScore > profile.bestDept.score) profile.bestDept = {score:quizScore, total};
+    if(total === 96 && quizScore === 96) profile.deptPerfect96 = true;
+  } else {
+    if(!profile.bestCountry || quizScore > profile.bestCountry.score) profile.bestCountry = {score:quizScore, total};
+    if(zone && zone !== "all" && !profile.zonesPlayed.includes(zone)) profile.zonesPlayed.push(zone);
+  }
+  BADGES.forEach(b=>{ if(!profile.badgesEarned.includes(b.id) && b.cond(profile)) profile.badgesEarned.push(b.id); });
+  saveProfile();
+  renderProfileChip();
+  return profile.badgesEarned.filter(id=>!before.has(id));
+}
+
+function openProfilePanel(){
+  ["setupDept","setupCountry","quiz","result"].forEach(id=>document.getElementById(id).classList.add("hidden"));
+  renderProfilePanel();
+  document.getElementById("profilePanel").classList.remove("hidden");
+}
+function closeProfilePanel(){
+  document.getElementById("profilePanel").classList.add("hidden");
+  document.getElementById(mode === "dept" ? "setupDept" : "setupCountry").classList.remove("hidden");
+}
+
+document.getElementById("onboardingStart").addEventListener("click", ()=>{
+  const val = document.getElementById("onboardingPseudo").value.trim();
+  profile = {
+    pseudo: val || "Joueur",
+    xp:0, gamesPlayed:0, bestDept:null, bestCountry:null,
+    hasPerfect:false, deptPerfect96:false, zonesPlayed:[], badgesEarned:[]
+  };
+  saveProfile();
+  document.getElementById("onboarding").classList.add("hidden");
+  renderProfileChip();
+});
+document.getElementById("profileChip").addEventListener("click", openProfilePanel);
+document.getElementById("profileClose").addEventListener("click", closeProfilePanel);
+document.getElementById("profileReset").addEventListener("click", ()=>{
+  if(!confirm("Réinitialiser ton profil (pseudo, score, badges) ?")) return;
+  try{ localStorage.removeItem(PROFILE_KEY); } catch(e){}
+  profile = null;
+  document.getElementById("profileChip").classList.add("hidden");
+  document.getElementById("profilePanel").classList.add("hidden");
+  document.getElementById("onboarding").classList.remove("hidden");
+});
+ensureProfile();
 
 // ---------- REVISION TABLE ----------
 function renderRevisionTable(){
@@ -917,6 +1302,61 @@ function renderRevisionTable(){
   }
 }
 
+// ---------- REVISION MAP (hover to reveal names, explore freely — no scoring) ----------
+function renderRevisionMap(){
+  const svg = document.getElementById("revisionSvg");
+  if(!svg) return;
+  const isDept = mode === "dept";
+  const dataset = isDept ? DEPARTMENTS : COUNTRIES;
+  const w = isDept ? 620 : 900;
+  const useGeo = isDept ? deptGeoReady : countryGeoReady;
+  let bounds;
+  if(isDept && useGeo) bounds = computeBoundsPadded(DEPT_GEO_BOUNDS, 0.025);
+  else if(isDept) bounds = DEPT_BOUNDS;
+  else bounds = computeBounds(dataset, 0.08);
+  let h = isDept ? 430 : Math.round(w * (bounds.latMax-bounds.latMin) / (bounds.lonMax-bounds.lonMin));
+  if(!isDept) h = Math.max(300, Math.min(560, h));
+  svg.setAttribute("viewBox", "0 0 " + w + " " + h);
+  svg.innerHTML = "";
+
+  dataset.forEach((item, idx)=>{
+    const geom = useGeo ? (isDept ? DEPT_GEO[item.code] : COUNTRY_GEO[item.iso3]) : null;
+    if(geom){
+      const d = geometryToPathD(geom, bounds, w, h, 20);
+      svg.insertAdjacentHTML("beforeend", `<path class="dept-path revision-region" data-idx="${idx}" d="${d}"/>`);
+    } else {
+      const [x,y] = project(item, bounds, w, h, 20);
+      svg.insertAdjacentHTML("beforeend", `<circle class="dot revision-region" data-idx="${idx}" cx="${x}" cy="${y}" r="4"/>`);
+    }
+  });
+  svg.querySelectorAll(".revision-region").forEach(el=>{
+    el.addEventListener("pointerenter", showRevisionTooltip);
+    el.addEventListener("pointermove", moveRevisionTooltip);
+    el.addEventListener("pointerleave", hideRevisionTooltip);
+  });
+}
+
+function showRevisionTooltip(e){
+  const isDept = mode === "dept";
+  const idx = parseInt(e.currentTarget.dataset.idx, 10);
+  const item = (isDept ? DEPARTMENTS : COUNTRIES)[idx];
+  if(!item) return;
+  const tip = document.getElementById("revisionTooltip");
+  tip.textContent = isDept ? `${item.nom} (${item.code}) — ${item.chefLieu}` : `${item.nom} — ${item.capitale}`;
+  tip.classList.remove("hidden");
+  moveRevisionTooltip(e);
+}
+function moveRevisionTooltip(e){
+  const tip = document.getElementById("revisionTooltip");
+  const wrap = document.getElementById("revisionMapWrap");
+  const rect = wrap.getBoundingClientRect();
+  tip.style.left = (e.clientX-rect.left) + "px";
+  tip.style.top = (e.clientY-rect.top) + "px";
+}
+function hideRevisionTooltip(){
+  document.getElementById("revisionTooltip").classList.add("hidden");
+}
+
 // ---------- NAV / SETUP ----------
 function setMode(newMode){
   mode = newMode;
@@ -926,6 +1366,7 @@ function setMode(newMode){
   document.getElementById("quiz").classList.add("hidden");
   document.getElementById("result").classList.add("hidden");
   renderRevisionTable();
+  renderRevisionMap();
 }
 
 document.querySelectorAll(".mode-btn").forEach(b=>{
@@ -941,6 +1382,7 @@ document.getElementById("restartBtn").addEventListener("click", ()=>{
 });
 
 renderRevisionTable();
+renderRevisionMap();
 </script>
 </body>
 </html>
