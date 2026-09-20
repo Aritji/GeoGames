@@ -193,6 +193,28 @@
     box-shadow:0 4px 10px rgba(0,0,0,0.3);
   }
   .map-controls button:hover{background:var(--gold);}
+  .map-inset{
+    position:absolute;
+    bottom:16px;
+    left:16px;
+    width:190px;
+    background:linear-gradient(180deg, #ffffff, #e9eef4);
+    border:1px solid rgba(0,0,0,0.15);
+    border-radius:8px;
+    padding:6px;
+    box-shadow:0 8px 20px rgba(0,0,0,0.35);
+    z-index:3;
+  }
+  .map-inset-label{
+    font-size:0.68rem;
+    letter-spacing:0.02em;
+    text-transform:uppercase;
+    color:var(--ink-soft);
+    text-align:center;
+    margin-bottom:4px;
+  }
+  #insetSvg{width:100%;height:135px;display:block;border-radius:4px;overflow:hidden;background:#eef2f7;}
+  .inset-frame{stroke:var(--gold-deep);stroke-width:1.4;stroke-dasharray:5 4;fill:none;pointer-events:none;}
   .profile-chip{
     display:flex; align-items:center; gap:8px;
     background:var(--ink-soft); border:none; color:var(--paper);
@@ -429,6 +451,10 @@
         <button type="button" id="zoomIn" aria-label="Zoomer">+</button>
         <button type="button" id="zoomOut" aria-label="Dézoomer">−</button>
         <button type="button" id="zoomReset" aria-label="Réinitialiser le zoom">⟲</button>
+      </div>
+      <div id="mapInset" class="map-inset hidden">
+        <div class="map-inset-label" id="mapInsetLabel"></div>
+        <svg id="insetSvg"></svg>
       </div>
     </div>
     <div class="answer-fields" id="answerFields">
@@ -941,6 +967,48 @@ function renderMap(){
     content.appendChild(c);
   });
   updateMapTransform();
+  if(!isDept) renderClusterInset(content, bounds, w, h);
+  else document.getElementById("mapInset").classList.add("hidden");
+}
+
+// ---------- ZOOMED INSET for tightly packed small countries (e.g. the Caribbean) ----------
+const INSET_REGIONS = [
+  {id:"caraibes", label:"Caraïbes", lonMin:-88, lonMax:-59, latMin:9, latMax:24}
+];
+
+function renderClusterInset(content, mainBounds, mainW, mainH){
+  const insetWrap = document.getElementById("mapInset");
+  const region = INSET_REGIONS.find(r=>{
+    const count = activeSet.filter(it=>it.lon>=r.lonMin && it.lon<=r.lonMax && it.lat>=r.latMin && it.lat<=r.latMax).length;
+    return count >= 2;
+  });
+  if(!region){ insetWrap.classList.add("hidden"); return; }
+
+  // dashed rectangle on the main map showing which area the inset zooms into
+  const [rx1,ry1] = project({lat:region.latMax,lon:region.lonMin}, mainBounds, mainW, mainH, 20);
+  const [rx2,ry2] = project({lat:region.latMin,lon:region.lonMax}, mainBounds, mainW, mainH, 20);
+  content.insertAdjacentHTML("beforeend", `<rect class="inset-frame" x="${Math.min(rx1,rx2)}" y="${Math.min(ry1,ry2)}" width="${Math.abs(rx2-rx1)}" height="${Math.abs(ry2-ry1)}"/>`);
+
+  document.getElementById("mapInsetLabel").textContent = region.label + " (zoom)";
+  const insetBounds = computeBoundsPadded({lonMin:region.lonMin, lonMax:region.lonMax, latMin:region.latMin, latMax:region.latMax}, 0.12);
+  const iw = 400, ih = Math.round(iw * (insetBounds.latMax-insetBounds.latMin) / (insetBounds.lonMax-insetBounds.lonMin));
+  const isvg = document.getElementById("insetSvg");
+  isvg.setAttribute("viewBox", "0 0 " + iw + " " + ih);
+  isvg.innerHTML = "";
+
+  activeSet.forEach((item, idx)=>{
+    if(item.lon<region.lonMin || item.lon>region.lonMax || item.lat<region.latMin || item.lat>region.latMax) return;
+    const geom = countryGeoReady ? COUNTRY_GEO[item.iso3] : null;
+    if(geom){
+      const d = geometryToPathD(geom, insetBounds, iw, ih, 10);
+      isvg.insertAdjacentHTML("beforeend", `<path class="dept-path cont-${regionSlug(item.region)}" data-idx="${idx}" d="${d}"/>`);
+    } else {
+      const [x,y] = project(item, insetBounds, iw, ih, 10);
+      isvg.insertAdjacentHTML("beforeend", `<circle class="dot cont-${regionSlug(item.region)}" data-idx="${idx}" cx="${x}" cy="${y}" r="6"/>`);
+    }
+  });
+  isvg.querySelectorAll("[data-idx]").forEach(el=>el.addEventListener("click", onDotClick));
+  insetWrap.classList.remove("hidden");
 }
 
 // adds a small clickable marker on top of very small shapes (micro-states, Paris, etc.)
@@ -965,8 +1033,8 @@ function onDotClick(e){
   if(answered) return;
   const idx = parseInt(e.currentTarget.dataset.idx,10);
   selectedIdx = idx;
-  document.querySelectorAll("#mapSvg .dot, #mapSvg .dept-path").forEach(d=>d.classList.remove("selected"));
-  e.currentTarget.classList.add("selected");
+  document.querySelectorAll("#mapSvg .dot, #mapSvg .dept-path, #insetSvg [data-idx]").forEach(d=>d.classList.remove("selected"));
+  document.querySelectorAll(`#mapSvg [data-idx="${idx}"], #insetSvg [data-idx="${idx}"]`).forEach(d=>d.classList.add("selected"));
 }
 
 // ---------- MAP ZOOM & PAN ----------
@@ -1120,7 +1188,7 @@ function submitAnswer(){
   if(allOk) score++;
 
   // visual feedback on map
-  document.querySelectorAll("#mapSvg .dot, #mapSvg .dept-path").forEach(d=>{
+  document.querySelectorAll("#mapSvg .dot, #mapSvg .dept-path, #insetSvg [data-idx]").forEach(d=>{
     const idx = parseInt(d.dataset.idx,10);
     if(idx === targetGlobalIdx) d.classList.add("correct");
     else if(idx === selectedIdx && !locationOk) d.classList.add("wrong");
